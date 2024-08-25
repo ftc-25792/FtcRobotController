@@ -87,41 +87,51 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+         // Initialize the drive system variables.
+    leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
+    rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
 
-        // Initialize the drive system variables.
-        leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+    // Set motor directions
+    leftDrive.setDirection(DcMotor.Direction.REVERSE);
+    rightDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
-        // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
-        // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);
+    leftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    rightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        leftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    // Send telemetry message to indicate successful Encoder reset
+    telemetry.addData("Starting at",  "%7d :%7d",
+                      leftDrive.getCurrentPosition(),
+                      rightDrive.getCurrentPosition());
+    telemetry.update();
 
-        // Send telemetry message to indicate successful Encoder reset
-        telemetry.addData("Starting at",  "%7d :%7d",
-                          leftDrive.getCurrentPosition(),
-                          rightDrive.getCurrentPosition());
-        telemetry.update();
+    // Wait for the game to start (driver presses PLAY)
+    waitForStart();
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
+    // Step through each leg of the path to create a 'Z' shape
+    // Note: Reverse movement is obtained by setting a negative distance (not speed)
+    
+    // Move forward
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
+    
+    // Turn diagonally
+    encoderDrive(TURN_SPEED,   -12, 12, 4.0);  // Turn Left 12 Inches with 4 Sec timeout
+    
+    // Move diagonally
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
+    
+    // Turn back to straight
+    encoderDrive(TURN_SPEED,   12, -12, 4.0);  // Turn Right 12 Inches with 4 Sec timeout
+    
+    // Move forward to complete the 'Z'
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
 
-        // Step through each leg of the path,
-        // Note: Reverse movement is obtained by setting a negative distance (not speed)
-        encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-        encoderDrive(TURN_SPEED,   12, -12, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
-        encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
+    telemetry.addData("Path", "Complete");
+    telemetry.update();
+    sleep(1000);  // pause to display final telemetry message.
 
-        telemetry.addData("Path", "Complete");
-        telemetry.update();
-        sleep(1000);  // pause to display final telemetry message.
     }
 
     /*
