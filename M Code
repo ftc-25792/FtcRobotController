@@ -1,0 +1,79 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@Autonomous(name="Robot: Auto M Shape", group="Autonomous")
+public class MShapeAutoRun extends LinearOpMode {
+    private DcMotor frontLeft = null;
+    private DcMotor frontRight = null;
+    private DcMotor backLeft = null;
+    private DcMotor backRight = null;
+    double speed = 0.75;
+    long moveLongDuration = 700; // Move duration in milliseconds for longer segments
+    long moveShortDuration = 350; // Move duration in milliseconds for shorter segments
+    long turnDuration = 325; // Turn duration in milliseconds
+
+    @Override
+    public void runOpMode() {
+        // Initialize the hardware variables.
+        frontLeft = hardwareMap.get(DcMotor.class, "Left_front");
+        frontRight = hardwareMap.get(DcMotor.class, "Right_front");
+        backLeft = hardwareMap.get(DcMotor.class, "Left_rear");
+        backRight = hardwareMap.get(DcMotor.class, "Right_rear");
+        backRight.setDirection(DcMotor.Direction.REVERSE);
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+
+        if (opModeIsActive()) {
+            // First long segment
+            move(speed, speed, speed, speed, moveLongDuration);
+            stopMoving();
+
+            // Short segment
+            turn(90); // Turn 90 degrees
+            move(speed, speed, speed, speed, moveShortDuration);
+            stopMoving();
+
+            // Second long segment
+            turn(90); // Turn 90 degrees
+            move(speed, speed, speed, speed, moveLongDuration);
+            stopMoving();
+
+            // Short segment
+            turn(90); // Turn 90 degrees
+            move(speed, speed, speed, speed, moveShortDuration);
+            stopMoving();
+
+            // Final long segment
+            turn(90); // Turn 90 degrees
+            move(speed, speed, speed, speed, moveLongDuration);
+            stopMoving();
+        }
+    }
+
+    // Create move function
+    private void move(double a, double b, double c, double d, long e) {
+        frontLeft.setPower(a);
+        frontRight.setPower(b);
+        backLeft.setPower(c);
+        backRight.setPower(d);
+        sleep(e);
+    }
+
+    // Create turn function
+    private void turn(int angle) {
+        // Duration for turning 90 degrees needs to be calibrated
+        long turnDuration = 325; // Adjust if needed
+        move(speed, -speed, speed, -speed, turnDuration);
+        sleep(500); // Optional: additional delay if needed
+    }
+
+    // Create stop moving function
+    private void stopMoving() {
+        move(0, 0, 0, 0, 500); // Optional: delay after stopping
+    }
+}
