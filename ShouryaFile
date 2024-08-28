@@ -15,6 +15,11 @@ public class SquareAutoRun extends LinearOpMode {
 this number to adjust the distance traveled per side*/
     long turnDuration = 325; // Turn duration in milliseconds
 
+backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+
     @Override
     public void runOpMode() {
         // Initialize the hardware variables.
