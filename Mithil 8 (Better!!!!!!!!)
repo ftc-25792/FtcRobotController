@@ -1,0 +1,98 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+public class EightShapeMovement {
+    private DcMotor motorLeftFront;
+    private DcMotor motorRightFront;
+    private DcMotor motorLeftRear;
+    private DcMotor motorRightRear;
+
+    // Assuming you have initialized the motors and other necessary components
+// Cracked at fortnite my my!!!!!!!!
+    public void moveInEightShape() {
+        // Adjust motor power and duration as needed
+        int motorPower = (int) 1;
+        int straightTime = 2000; // Time for 30" movement (adjust based on robot speed)
+        int turnTime = 1000; // Time for 90-degree turn (adjust based on robot speed)
+
+        for (int i = 0; i < 2; i++) {
+            // Move forward
+            moveStraight(motorPower, straightTime);
+
+            // Turn right
+            turnRight(motorPower, turnTime);
+
+            // Move backward
+            moveStraight(-motorPower, straightTime);
+
+            // Turn left
+            turnLeft(motorPower, turnTime);
+        }
+    }
+
+    private void moveStraight(int power, int time) {
+        // Set motor powers based on your robot's configuration
+        motorLeftFront.setPower(power);
+        motorRightFront.setPower(power);
+        motorLeftRear.setPower(power);
+        motorRightRear.setPower(power);
+
+        // Wait for specified time
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Stop motors
+        motorLeftFront.setPower(0);
+        motorRightFront.setPower(0);
+        motorLeftRear.setPower(0);
+        motorRightRear.setPower(0);
+    }
+
+    private void turnRight(int power, int time) {
+        // Set motor powers for a right turn
+        // Adjust motor powers based on your robot's configuration
+        motorLeftFront.setPower(power);
+        motorRightFront.setPower(-power);
+        motorLeftRear.setPower(power);
+        motorRightRear.setPower(-power);
+
+        // Wait for specified time
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Stop motors
+        motorLeftFront.setPower(0);
+        motorRightFront.setPower(0);
+        motorLeftRear.setPower(0);
+        motorRightRear.setPower(0);
+    }
+
+    private void turnLeft(int power, int time) {
+        // Set motor powers for a left turn
+        // Adjust motor powers based on your robot's configuration
+        motorLeftFront.setPower(-power);
+        motorRightFront.setPower(power);
+        motorLeftRear.setPower(-power);
+        motorRightRear.setPower(power);
+
+        // Wait for specified time
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Stop motors
+        motorLeftFront.setPower(0);
+        motorRightFront.setPower(0);
+        motorLeftRear.setPower(0);
+        motorRightRear.setPower(0);
+    }
+}
