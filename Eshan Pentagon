@@ -18,10 +18,10 @@ public class PentagonMotion extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Initialize motors
-        motorfrontLeft = hardwareMap.get(DcMotor.class, "frontLeftMotor");
-        motorfrontRight = hardwareMap.get(DcMotor.class, "frontRightMotor");
-        motorbackLeft = hardwareMap.get(DcMotor.class, "backLeftMotor");
-        motorbackRight = hardwareMap.get(DcMotor.class, "backRightMotor");
+        motorfrontLeft = hardwareMap.get(DcMotor.class, "Left_front");
+        motorfrontRight = hardwareMap.get(DcMotor.class, "Right_front");
+        motorbackLeft = hardwareMap.get(DcMotor.class, "Left_rear");
+        motorbackRight = hardwareMap.get(DcMotor.class, "Right_rear");
 
         // Set motor directions (adjust as needed)
         motorfrontLeft.setDirection(DcMotor.Direction.REVERSE);
