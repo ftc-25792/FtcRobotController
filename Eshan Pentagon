@@ -18,14 +18,14 @@ public class PentagonMotion extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Initialize motors
-        motorFrontLeft = hardwareMap.get(DcMotor.class, "frontLeftMotor");
-        motorFrontRight = hardwareMap.get(DcMotor.class, "frontRightMotor");
-        motorBackLeft = hardwareMap.get(DcMotor.class, "backLeftMotor");
-        motorBackRight = hardwareMap.get(DcMotor.class, "backRightMotor");
+        motorfrontLeft = hardwareMap.get(DcMotor.class, "frontLeftMotor");
+        motorfrontRight = hardwareMap.get(DcMotor.class, "frontRightMotor");
+        motorbackLeft = hardwareMap.get(DcMotor.class, "backLeftMotor");
+        motorbackRight = hardwareMap.get(DcMotor.class, "backRightMotor");
 
         // Set motor directions (adjust as needed)
-        motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        motorBackLeft.setDirection(DcMotor.Direction.REVERSE);
+        motorfrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        motorbackLeft.setDirection(DcMotor.Direction.REVERSE);
 
         waitForStart();
 
@@ -49,26 +49,26 @@ public class PentagonMotion extends LinearOpMode {
     }
 
     private void moveForward(double time) {
-        motorFrontLeft.setPower(forwardSpeed);
-        motorFrontRight.setPower(forwardSpeed);
-        motorBackLeft.setPower(forwardSpeed);
-        motorBackRight.setPower(forwardSpeed);
+        motorfrontLeft.setPower(forwardSpeed);
+        motorfrontRight.setPower(forwardSpeed);
+        motorbackLeft.setPower(forwardSpeed);
+        motorbackRight.setPower(forwardSpeed);
         sleep(time * 1000); // Convert seconds to milliseconds
-        motorFrontLeft.setPower(0);
-        motorFrontRight.setPower(0);
-        motorBackLeft.setPower(0);
-        motorBackRight.setPower(0);
+        motorfrontLeft.setPower(0);
+        motorfrontRight.setPower(0);
+        motorbackLeft.setPower(0);
+        motorbackRight.setPower(0);
     }
 
     private void turn(double time, double radians) {
-        motorFrontLeft.setPower(turnSpeed);
-        motorFrontRight.setPower(-turnSpeed);
-        motorBackLeft.setPower(turnSpeed);
-        motorBackRight.setPower(-turnSpeed);
+        motorfrontLeft.setPower(turnSpeed);
+        motorfrontRight.setPower(-turnSpeed);
+        motorbackLeft.setPower(turnSpeed);
+        motorbackRight.setPower(-turnSpeed);
         sleep(time * 1000); // Convert seconds to milliseconds
-        motorFrontLeft.setPower(0);
-        motorFrontRight.setPower(0);
-        motorBackLeft.setPower(0);
-        motorBackRight.setPower(0);
+        motorfrontLeft.setPower(0);
+        motorfrontRight.setPower(0);
+        motorbackLeft.setPower(0);
+        motorbackRight.setPower(0);
     }
 }
