@@ -38,7 +38,6 @@ public class SquareAutoRun extends LinearOpMode {
                 sleep(moveDuration);
 
                 // Stop moving forward
-
                 frontLeft.setPower(0);
                 frontRight.setPower(0);
                 backLeft.setPower(0);
