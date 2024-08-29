@@ -1,0 +1,74 @@
+package org.firstinspires.ftc.teamcode;
+
+import org.firstinspires.ftc.robotcore.opmode.Autonomous;
+import org.firstinspires.ftc.robotcore.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.hardware.DcMotor;
+
+@Autonomous(name="PentagonMotion")
+public class PentagonMotion extends LinearOpMode {
+
+    private DcMotor motorFrontLeft, motorFrontRight, motorBackLeft, motorBackRight;
+
+    // Adjust these values based on your robot's speed and wheel diameter
+    private final double forwardSpeed = 0.5;
+    private final double turnSpeed = 0.3;
+    private final double sideLength = 28.0; // inches
+    private final double wheelDiameter = 4.0; // inches
+
+    @Override
+    public void runOpMode() {
+        // Initialize motors
+        motorFrontLeft = hardwareMap.get(DcMotor.class, "frontLeftMotor");
+        motorFrontRight = hardwareMap.get(DcMotor.class, "frontRightMotor");
+        motorBackLeft = hardwareMap.get(DcMotor.class, "backLeftMotor");
+        motorBackRight = hardwareMap.get(DcMotor.class, "backRightMotor");
+
+        // Set motor directions (adjust as needed)
+        motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        motorBackLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        waitForStart();
+
+        // Calculate angle for each turn (interior angle of a pentagon)
+        double turnAngle = 108.0; // degrees
+
+        // Convert angle to radians for trigonometric functions
+        double radians = Math.toRadians(turnAngle);
+
+        // Calculate time for forward and turn movements (adjust as needed)
+        double forwardTime = (sideLength / wheelDiameter) / forwardSpeed; // seconds
+        double turnTime = (radians / turnSpeed) / (2 * Math.PI); // seconds
+
+        for (int i = 0; i < 5; i++) {
+            // Move forward
+            moveForward(forwardTime);
+
+            // Turn
+            turn(turnTime, radians);
+        }
+    }
+
+    private void moveForward(double time) {
+        motorFrontLeft.setPower(forwardSpeed);
+        motorFrontRight.setPower(forwardSpeed);
+        motorBackLeft.setPower(forwardSpeed);
+        motorBackRight.setPower(forwardSpeed);
+        sleep(time * 1000); // Convert seconds to milliseconds
+        motorFrontLeft.setPower(0);
+        motorFrontRight.setPower(0);
+        motorBackLeft.setPower(0);
+        motorBackRight.setPower(0);
+    }
+
+    private void turn(double time, double radians) {
+        motorFrontLeft.setPower(turnSpeed);
+        motorFrontRight.setPower(-turnSpeed);
+        motorBackLeft.setPower(turnSpeed);
+        motorBackRight.setPower(-turnSpeed);
+        sleep(time * 1000); // Convert seconds to milliseconds
+        motorFrontLeft.setPower(0);
+        motorFrontRight.setPower(0);
+        motorBackLeft.setPower(0);
+        motorBackRight.setPower(0);
+    }
+}
