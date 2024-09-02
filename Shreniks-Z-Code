@@ -1,0 +1,48 @@
+@Override
+public void Shreniks-Z-Code() {
+
+    // Initialize the drive system variables.
+    leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
+    rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+
+    // Set motor directions
+    leftDrive.setDirection(DcMotor.Direction.REVERSE);
+    rightDrive.setDirection(DcMotor.Direction.FORWARD);
+
+    leftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    rightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+    leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+    // Send telemetry message to indicate successful Encoder reset
+    telemetry.addData("Starting at",  "%7d :%7d",
+                      leftDrive.getCurrentPosition(),
+                      rightDrive.getCurrentPosition());
+    telemetry.update();
+
+    // Wait for the game to start (driver presses PLAY)
+    waitForStart();
+
+    // Step through each leg of the path to create a 'Z' shape
+    // Note: Reverse movement is obtained by setting a negative distance (not speed)
+    
+    // Move forward
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
+    
+    // Turn diagonally
+    encoderDrive(TURN_SPEED,   -12, 12, 4.0);  // Turn Left 12 Inches with 4 Sec timeout
+    
+    // Move diagonally
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
+    
+    // Turn back to straight
+    encoderDrive(TURN_SPEED,   12, -12, 4.0);  // Turn Right 12 Inches with 4 Sec timeout
+    
+    // Move forward to complete the 'Z'
+    encoderDrive(DRIVE_SPEED,  24,  24, 5.0);  // Forward 24 Inches with 5 Sec timeout
+
+    telemetry.addData("Path", "Complete");
+    telemetry.update();
+    sleep(1000);  // pause to display final telemetry message.
+}
