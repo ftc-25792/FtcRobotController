@@ -27,39 +27,34 @@ public class Trapezoid extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
-        
             // Move forward
             move(speed, speed, speed, speed, moveDuration);
-
             // Stop moving forward
             move(0, 0, 0, 0, 500);
 
             // R-Back strafe 45 degrees
             move(-speed, 0, 0, -speed, turnDuration);
-
             // Stop strafing
             move(0, 0, 0, 0, 500);
 
             // Move backward
             move(-speed, -speed, -speed, -speed, 550);
-
-            // Stop moving forward
+            // Stop moving backward
             move(0, 0, 0, 0, 500);
 
             // L-Back strafe 45 degrees
             move(0, -speed, -speed, 0, turnDuration);
-
             // Stop strafing
             move(0, 0, 0, 0, 500);
-
-        
         }
     }
-}
-    public static void move(double a, double b, double c, double d, long e) {
+
+    // Updated move method definition
+    public void move(double a, double b, double c, double d, long e) {
         frontLeft.setPower(a);
         frontRight.setPower(b);
         backLeft.setPower(c);
         backRight.setPower(d);
         sleep(e);
     }
+}
