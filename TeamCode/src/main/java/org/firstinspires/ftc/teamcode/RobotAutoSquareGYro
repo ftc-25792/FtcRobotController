@@ -1,0 +1,121 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
+@Autonomous(name="Robot: Auto Square with Gyro", group="Autonomous")
+public class SquareAUtoRunGyro extends LinearOpMode {
+    private DcMotor frontLeft = null;
+    private DcMotor frontRight = null;
+    private DcMotor backLeft = null;
+    private DcMotor backRight = null;
+    private IMU imu = null;
+
+    double speed = 0.75;
+    long moveDuration = 1000; // Adjust this duration to match your robot's speed
+    long turnDuration = 500; // Duration for turns
+
+    @Override
+    public void runOpMode() {
+        // Initialize the hardware variables.
+        frontLeft = hardwareMap.get(DcMotor.class, "Left_front");
+        frontRight = hardwareMap.get(DcMotor.class, "Right_front");
+        backLeft = hardwareMap.get(DcMotor.class, "Left_rear");
+        backRight = hardwareMap.get(DcMotor.class, "Right_rear");
+
+        // Set motor directions
+        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        // Initialize the IMU
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
+
+        imu = hardwareMap.get(IMU.class, "imu");
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+
+        if (opModeIsActive()) {
+            // Start by resetting the heading
+            imu.resetYaw();
+
+            // Execute the square path
+            for (int i = 0; i < 4; i++) {
+                moveForward(speed, moveDuration);
+                turn90Degrees(speed, turnDuration);
+            }
+        }
+    }
+
+    // Move forward while maintaining the current heading
+    private void moveForward(double power, long duration) {
+        frontLeft.setPower(power);
+        frontRight.setPower(power);
+        backLeft.setPower(power);
+        backRight.setPower(power);
+        sleep(duration);
+        stopMotors();
+    }
+
+    // Turn 90 degrees to the right
+    private void turn90Degrees(double power, long duration) {
+        // Turn right
+        frontLeft.setPower(power);
+        frontRight.setPower(-power);
+        backLeft.setPower(power);
+        backRight.setPower(-power);
+        sleep(duration);
+        stopMotors();
+
+        // Ensure robot is correctly aligned after turn
+        holdHeading();
+    }
+
+    // Stop all motors
+    private void stopMotors() {
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+        backLeft.setPower(0);
+        backRight.setPower(0);
+    }
+
+    // Hold the current heading for a short time to stabilize the robot
+    private void holdHeading() {
+        ElapsedTime timer = new ElapsedTime();
+        double targetHeading = getHeading();
+
+        while (opModeIsActive() && timer.time() < 1.0) { // Hold for 1 second
+            double currentHeading = getHeading();
+            double error = targetHeading - currentHeading;
+            double correction = Range.clip(error * 0.1, -1.0, 1.0); // Proportional control
+
+            frontLeft.setPower(correction);
+            frontRight.setPower(-correction);
+            backLeft.setPower(correction);
+            backRight.setPower(-correction);
+            telemetry.addData("Target Heading", targetHeading);
+            telemetry.addData("Current Heading", currentHeading);
+            telemetry.update();
+        }
+        stopMotors();
+    }
+
+    // Read the robot's heading from the IMU
+    private double getHeading() {
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getYaw(AngleUnit.DEGREES);
+    }
+}
