@@ -16,6 +16,9 @@ public class ServoAutonomousOpMode extends LinearOpMode {
 
         servo.setPosition(0.5); // Set servo to middle position
         sleep(2000); // Wait for 2 seconds
-        servo.setPosition(1.0); // Set servo to maximum position
+        servo.setPosition(1.0);// Set servo to maximum position
+        sleep(2000);// Wait for 2 seconds
+        servo.setPosition(-0.5);// Set servo back to middle position
+        sleep(2000);// Wait for 2 seconds
     }
 }
