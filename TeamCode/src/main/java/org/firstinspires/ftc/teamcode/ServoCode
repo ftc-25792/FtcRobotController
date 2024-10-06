@@ -1,0 +1,21 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.Servo;
+
+@Autonomous(name="Servo Movement", group = "Autonomous")
+
+public class ServoAutonomousOpMode extends LinearOpMode {
+
+    @Override
+    public void runOpMode() {
+        Servo servo = hardwareMap.get(Servo.class, "servo1");
+
+        waitForStart();
+
+        servo.setPosition(0.5); // Set servo to middle position
+        sleep(2000); // Wait for 2 seconds
+        servo.setPosition(1.0); // Set servo to maximum position
+    }
+}
