@@ -1,0 +1,70 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+@TeleOp(name="BasicTeleOp", group="Linear Opmode")
+public class BasicTeleOp extends OpMode {
+
+    // Declare motors
+    DcMotor motorFrontLeft;
+    DcMotor motorFrontRight;
+    DcMotor motorBackLeft;
+    DcMotor motorBackRight;
+    DcMotor armMotor;
+
+    @Override
+    public void init() {
+        // Initialize motors
+        motorFrontLeft = hardwareMap.get(DcMotor.class, "Left_front");
+        motorFrontRight = hardwareMap.get(DcMotor.class, "Right_front");
+        motorBackLeft = hardwareMap.get(DcMotor.class, "Left_rear");
+        motorBackRight = hardwareMap.get(DcMotor.class, "Right_rear");
+        armMotor = hardwareMap.get(DcMotor.class, "armMotor");
+
+        // Set motor directions (adjust as needed)
+        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorBackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorFrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+    }
+
+    @Override
+    public void loop() {
+        // Set gamepad inputs
+        double leftStickX = gamepad1.left_stick_x;
+        double leftStickY = gamepad1.left_stick_y;
+        double rightStickX = gamepad1.right_stick_x;
+        boolean triangle = gamepad1.dpad_up;
+
+        boolean toggleUp = false;
+
+        // Calculate wheel powers
+        double frontLeftPower = leftStickY + leftStickX;
+        double frontRightPower = leftStickY - leftStickX;
+        double backLeftPower = leftStickY + rightStickX;
+        double backRightPower = leftStickY - rightStickX;
+
+        // Set motor powers
+        motorFrontLeft.setPower(frontLeftPower);
+        motorFrontRight.setPower(frontRightPower);
+        motorBackLeft.setPower(backLeftPower);
+        motorBackRight.setPower(backRightPower);
+
+        // Control arm with triangle button
+        if (triangle) {
+            if(!toggleUp) {
+                armMotor.setPower(1.0);
+                toggleUp = true;
+            }
+            else {
+                armMotor.setPower(-1.0);
+                toggleUp = false;
+            }
+        } else {
+            armMotor.setPower(0.0);
+        }
+    }
+}
