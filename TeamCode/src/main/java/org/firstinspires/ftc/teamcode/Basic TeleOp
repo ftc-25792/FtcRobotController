@@ -1,50 +1,23 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse and
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name="CombinedTeleOp", group="Linear Opmode")
-public class CombinedTeleOp extends OpMode {
+@TeleOp(name="BasicTeleOp", group="Linear Opmode")
+public class BasicTeleOp extends OpMode {
+
     // Declare motors
     DcMotor motorFrontLeft;
     DcMotor motorFrontRight;
     DcMotor motorBackLeft;
     DcMotor motorBackRight;
     DcMotor armMotor;
+    int armDesiredPosition =-1;
     DcMotor viperMotor; // For the Viper slide
     IMU imu;
 
@@ -55,6 +28,7 @@ public class CombinedTeleOp extends OpMode {
     static final double MIN_POS = 0.0; // Minimum servo position
     double[] positions; // Current positions for each servo
 
+
     @Override
     public void init() {
         // Initialize motors
@@ -63,9 +37,10 @@ public class CombinedTeleOp extends OpMode {
         motorBackLeft = hardwareMap.get(DcMotor.class, "Left_rear");
         motorBackRight = hardwareMap.get(DcMotor.class, "Right_rear");
         armMotor = hardwareMap.get(DcMotor.class, "armMotor");
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         viperMotor = hardwareMap.get(DcMotor.class, "viperMotor");
 
-        // Set motor directions
+        // Set motor directions (adjust as needed)
         motorBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
         motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -78,6 +53,7 @@ public class CombinedTeleOp extends OpMode {
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
 
+
         // Initialize servos
         int SERVO_COUNT = 4;
         servo = new Servo[SERVO_COUNT];
@@ -87,20 +63,24 @@ public class CombinedTeleOp extends OpMode {
             positions[i] = MIN_POS; // Start all servos at minimum position
             servo[i].setPosition(positions[i]);
         }
+
+
     }
 
     @Override
     public void loop() {
-        // Handle motor control
+        // Set gamepad inputs
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;
-        boolean triangle = gamepad1.y; // Button to move arm up
-        boolean aButton = gamepad1.a; // Button to retract arm
+        boolean triangle = gamepad1.dpad_up;
+        boolean X = gamepad1.dpad_down;
         boolean rightTrigger = gamepad1.right_trigger > 0.9; // Trigger to extend Viper slide
         boolean leftTrigger = gamepad1.left_trigger > 0.9; // Trigger to retract Viper slide
         boolean right = gamepad1.dpad_right;
-        boolean left = gamepad1.dpad_left;
+        boolean left = gamepad1.dpad_left; // Check if the trigger is pressed beyond a threshold
+
+        boolean toggleUp = false;
 
         // Calculate wheel powers
         double frontLeftPower = leftStickY + leftStickX;
@@ -114,53 +94,235 @@ public class CombinedTeleOp extends OpMode {
         motorBackLeft.setPower(backLeftPower);
         motorBackRight.setPower(backRightPower);
 
-        // Control arm with triangle button (up) and A button (down)
         if (triangle) {
-            armMotor.setPower(1.0); // Move arm up
-        } else if (aButton) {
-            armMotor.setPower(-1.0); // Retract arm
+            if (!toggleUp) {
+                armMotor.setPower(1.0);
+                armDesiredPosition = armMotor.getCurrentPosition();
+                toggleUp = true;
+            } else {
+                armMotor.setPower(-1.0);
+                armDesiredPosition = armMotor.getCurrentPosition();
+                toggleUp = false;
+            }
         } else {
-            armMotor.setPower(0.0); // Hold position
-        }
+            armMotor.setPower(0.0);
 
-        // Control Viper slide
-        if (rightTrigger) {
-            viperMotor.setPower(1.0); // Extend Viper slide
-        } else if (leftTrigger) {
-            viperMotor.setPower(-1.0); // Retract Viper slide
-        } else {
-            viperMotor.setPower(0.0); // Stop Viper slide
-        }
 
-        // Control servo positions with buttons
-        if (right) { // Increment position
-            for (int i = 0; i < servo.length; i++) {
-                if (positions[i] < MAX_POS) {
-                    positions[i] += INCREMENT;
-                    if (positions[i] > MAX_POS) {
-                        positions[i] = MAX_POS; // Clamp to max
+            int currentPosition = armMotor.getCurrentPosition();
+            if (armDesiredPosition!=-1 && currentPosition != armDesiredPosition) {
+                armMotor.setTargetPosition(armDesiredPosition);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Controls the arm speed
+                armMotor.setPower(Math.abs(0.01));
+                while (armMotor.isBusy()) {
+                    //telemetry.addData("Running to");
+                    telemetry.addData("Currently at", armMotor.getCurrentPosition());
+
+                }
+                // Stop all motion;
+                armMotor.setPower(0);
+
+
+                // Turn off RUN_TO_POSITION
+                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+                if (X) {
+                    if (!toggleUp) {
+                        armMotor.setPower(-1.0);
+                        armDesiredPosition = armMotor.getCurrentPosition();
+                        toggleUp = true;
+                    } else {
+                        armMotor.setPower(1.0);
+                        armDesiredPosition = armMotor.getCurrentPosition();
+                        toggleUp = false;
                     }
-                    servo[i].setPosition(positions[i]);
+                } else {
+                    armMotor.setPower(0.0);
+                    //To do: Add enocder logic to hold the motor in place
+                    // Use the SDK
+
+
+                    if (currentPosition != armDesiredPosition) {
+                        armMotor.setTargetPosition(armDesiredPosition);
+                        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        armMotor.setPower(Math.abs(0.01));
+                        while (armMotor.isBusy()) {
+                            //telemetry.addData("Running to");
+                            telemetry.addData("Currently at",
+                                    armMotor.getCurrentPosition());
+
+                        }
+                        // Stop all motion;
+                        armMotor.setPower(0);
+
+
+                        // Turn off RUN_TO_POSITION
+                        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            // Control Viper slide
+            if (rightTrigger) {
+                viperMotor.setPower(1.0); // Extend Viper slide
+            } else if (leftTrigger) {
+                viperMotor.setPower(-1.0); // Retract Viper slide
+            } else {
+                viperMotor.setPower(0.0); // Stop Viper slide
+            }
+
+            // Control servo positions with buttons
+            if (right) { // Increment position
+                for (int i = 0; i < servo.length; i++) {
+                    if (positions[i] < MAX_POS) {
+                        positions[i] += INCREMENT;
+                        if (positions[i] > MAX_POS) {
+                            positions[i] = MAX_POS; // Clamp to max
+                        }
+                        servo[i].setPosition(positions[i]);
+                    }
                 }
             }
-        }
 
-        if (left) { // Decrement position
-            for (int i = 0; i < servo.length; i++) {
-                if (positions[i] > MIN_POS) {
-                    positions[i] -= INCREMENT;
-                    if (positions[i] < MIN_POS) {
-                        positions[i] = MIN_POS; // Clamp to min
+            if (left) { // Decrement position
+                for (int i = 0; i < servo.length; i++) {
+                    if (positions[i] > MIN_POS) {
+                        positions[i] -= INCREMENT;
+                        if (positions[i] < MIN_POS) {
+                            positions[i] = MIN_POS; // Clamp to min
+                        }
+                        servo[i].setPosition(positions[i]);
                     }
-                    servo[i].setPosition(positions[i]);
                 }
             }
+
+
         }
 
-        // Telemetry for debugging
-        for (int i = 0; i < servo.length; i++) {
-            telemetry.addData("Servo " + (i + 1) + " Position", "%5.2f", positions[i]);
+        if (triangle) {
+            boolean isArmUp = false;
+            if (!isArmUp) {
+                armMotor.setPower(1.0);
+                isArmUp = true;
+
+            } else {
+                armMotor.setPower(0.0);
+                isArmUp = false;
+
+                if (X) { // Replace with the desired button
+                    boolean isArmDown = false;
+                    if (!isArmDown) {
+                        armMotor.setPower(-1.0); // Adjust power as necessary
+                        isArmDown = true;
+                    } else {
+                        armMotor.setPower(0.0); // Stop lowering
+                        isArmDown = false; // Toggle state
+                    }
+                }
+                // Control servo positions with buttons
+
+
+/*
+        // Control arm with triangle button
+        if (triangle) {
+            if (!toggleUp) {
+                armMotor.setPower(1.0);
+                armDesiredPosition = armMotor.getCurrentPosition();
+                toggleUp = true;
+            } else {
+                armMotor.setPower(-1.0);
+                armDesiredPosition = armMotor.getCurrentPosition();
+                toggleUp = false;
+            }
+        } else {
+            armMotor.setPower(0.0);
+            //To do: Add enocder logic to hold the motor in place
+            // Use the SDK
+
+            int currentPosition = armMotor.getCurrentPosition();
+            if (currentPosition != armDesiredPosition) {
+                armMotor.setTargetPosition(armDesiredPosition);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Controls the arm speed
+                armMotor.setPower(Math.abs(0.01));
+                while (armMotor.isBusy()) {
+                    //telemetry.addData("Running to");
+                    telemetry.addData("Currently at", " at %7d :%7d",
+                            armMotor.getCurrentPosition());
+
+                }
+                // Stop all motion;
+                armMotor.setPower(0);
+
+
+                // Turn off RUN_TO_POSITION
+                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+                if (X) {
+                    if (!toggleUp) {
+                        armMotor.setPower(-1.0);
+                        armDesiredPosition = armMotor.getCurrentPosition();
+                        toggleUp = true;
+                    } else {
+                        armMotor.setPower(1.0);
+                        armDesiredPosition = armMotor.getCurrentPosition();
+                        toggleUp = false;
+                    }
+                } else {
+                    armMotor.setPower(0.0);
+                    //To do: Add enocder logic to hold the motor in place
+                    // Use the SDK
+
+
+                    if (currentPosition != armDesiredPosition) {
+                        armMotor.setTargetPosition(armDesiredPosition);
+                        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        armMotor.setPower(Math.abs(0.01));
+                        while (armMotor.isBusy()) {
+                            //telemetry.addData("Running to");
+                            telemetry.addData("Currently at", " at %7d :%7d",
+                                    armMotor.getCurrentPosition());
+
+                        }
+                        // Stop all motion;
+                        armMotor.setPower(0);
+
+
+                        // Turn off RUN_TO_POSITION
+                        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+                /*
+                // reset the timeout time and start motion.
+
+            leftDrive.setPower(Math.abs(speed));
+            rightDrive.setPower(Math.abs(speed));
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() &&
+                   (runtime.seconds() < timeoutS) &&
+                   (leftDrive.isBusy() && rightDrive.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
+                telemetry.addData("Currently at",  " at %7d :%7d",
+                                            leftDrive.getCurrentPosition(), rightDrive.getCurrentPosition());
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            leftDrive.setPower(0);
+            rightDrive.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                 */
+            }
         }
-        telemetry.update();
-    }
-}
+    }}}}}
