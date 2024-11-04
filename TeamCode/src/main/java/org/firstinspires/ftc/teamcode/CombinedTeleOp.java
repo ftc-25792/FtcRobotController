@@ -48,7 +48,9 @@ public class CombinedTeleOp extends LinearOpMode {
     final double ARM_SCORE_SPECIMEN = 160 * ARM_TICKS_PER_DEGREE;
     final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
     final double ARM_WINCH_ROBOT = 15 * ARM_TICKS_PER_DEGREE;
-
+    final double INTAKE_COLLECT = 1;
+    final double INTAKE_OFF = 0;
+    final double INTAKE_DEPOSIT = -1;
     // PID control variables for arm
     double kp = 0.02; // Proportional gain
     double ki = 0.0;  // Integral gain
@@ -122,11 +124,11 @@ public class CombinedTeleOp extends LinearOpMode {
             one cycle. Which can cause strange behavior. */
 
             if (gamepad1.a) {
-                // intake.setPower(INTAKE_COLLECT);
+                intake.setPosition(INTAKE_COLLECT);
             } else if (gamepad1.x) {
-                //  intake.setPower(INTAKE_OFF);
+                intake.setPosition(INTAKE_OFF);
             } else if (gamepad1.b) {
-                //intake.setPower(INTAKE_DEPOSIT);
+                intake.setPosition(INTAKE_DEPOSIT);
             }
 
 
@@ -143,7 +145,7 @@ public class CombinedTeleOp extends LinearOpMode {
                 armPosition = ARM_COLLECT;
                 wrist.setPosition(WRIST_FOLDED_OUT);
                 viperMotor.setPower(0.5); // Extend Viper slide
-                //intake.setPower(INTAKE_COLLECT);
+                intake.setPosition(INTAKE_COLLECT);
             } else if (gamepad1.left_bumper) {
                     /* This is about 20° up from the collecting position to clear the barrier
                     Note here that we don't set the wrist position or the intake power when we
