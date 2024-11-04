@@ -36,7 +36,7 @@ public class CombinedTeleOp extends LinearOpMode {
     // Arm control variables
     final double ARM_TICKS_PER_DEGREE = 7125.16 / 360; // Encoder ticks per degree (assumes specific motor characteristics)
     final double ARM_COLLAPSED_INTO_ROBOT = 0;
-    final double ARM_COLLECT = 250 * ARM_TICKS_PER_DEGREE;
+    final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;//250
     final double ARM_SCORE_SAMPLE_IN_LOW = 160 * ARM_TICKS_PER_DEGREE;
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
 
@@ -45,16 +45,16 @@ public class CombinedTeleOp extends LinearOpMode {
     final double WRIST_FOLDED_IN = 0.8333;
     final double WRIST_FOLDED_OUT = 0.5;
     final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SPECIMEN = 160 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SPECIMEN = 50 * ARM_TICKS_PER_DEGREE;//160
     final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
-    final double ARM_WINCH_ROBOT = 15 * ARM_TICKS_PER_DEGREE;
+    final double ARM_WINCH_ROBOT = 8 * ARM_TICKS_PER_DEGREE;//15
     final double INTAKE_COLLECT = 1;
     final double INTAKE_OFF = 0;
     final double INTAKE_DEPOSIT = -1;
     // PID control variables for arm
     double kp = 0.02; // Proportional gain
     double ki = 0.0;  // Integral gain
-    double kd = 0.01; // Derivative gain
+    double kd = 0.01; // Derivative gain333
     double lastError = 0.0; // Last error value for derivative calculation
     double integral = 0.0; // Integral error
     int targetArmPosition = 0; // Target position
