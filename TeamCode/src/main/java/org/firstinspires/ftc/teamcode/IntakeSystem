@@ -2,30 +2,43 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name="IntakeSystem", group="TeleOp")
-public class IntakeSystem extends LinearOpMode {
+import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+@TeleOp(name="InTake", group="Linear Opmode")
 
-    // Declare a Servo object for the intake servo
-    Servo intakeServo;
+public class InTake extends LinearOpMode {
+    Servo intake;
+    static final double INCREMENT   = 0.01;
+    double  position = (0.5);// - MIN_POS) / 2; // Start at halfway position
 
     @Override
     public void runOpMode() {
-        // Initialize the hardware map
-        intakeServo = hardwareMap.get(Servo.class, "intake_servo"); //Rename this servo to our servo name
+        
+        intake = hardwareMap.get(Servo.class, "intake");
 
         waitForStart();
-
+        boolean isActiveInTake = false;
         while (opModeIsActive()) {
-            // Control the servo position based on gamepad input
-            if (gamepad1.a) {
-                // Open the intake servo
-                intakeServo.setPosition(0.0);
-            } else if (gamepad1.b) {
-                // Close the intake servo
-                intakeServo.setPosition(1.0);
+            if ( (!isActiveInTake) && (gamepad1.right_trigger > 0f) ) {
+               isActiveInTake = true;
+
             }
+            else if((isActiveInTake) && (gamepad1.left_trigger > 0f)) {
+                isActiveInTake = false;
+            }
+            if (isActiveInTake)
+            {
+                position = position+INCREMENT;
+                
+                intake.setPosition(position);
+            }
+
         }
     }
 }
+
