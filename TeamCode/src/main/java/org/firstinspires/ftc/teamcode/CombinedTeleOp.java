@@ -37,9 +37,9 @@ public class CombinedTeleOp extends LinearOpMode {
     final double ARM_TICKS_PER_DEGREE = 7125.16 / 360; // Encoder ticks per degree (assumes specific motor characteristics)
     final double ARM_COLLAPSED_INTO_ROBOT = 0;
     final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;//250
-    final double ARM_SCORE_SAMPLE_IN_LOW = 100 * ARM_TICKS_PER_DEGREE; //160
+    final double ARM_SCORE_SAMPLE_IN_LOW = 30 * ARM_TICKS_PER_DEGREE; //160
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
-    final double ARM_SCORE_IN_HIGH = 150 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_IN_HIGH = 40 * ARM_TICKS_PER_DEGREE;
 
     //Viper Slide Control Variables
     final double VIPERSLIDE_TICKS_PER_DEGREE = 537.69 / 360;
@@ -164,8 +164,11 @@ public class CombinedTeleOp extends LinearOpMode {
             } else if (gamepad2.left_stick_button) {;
             viperMotor.setPower(0);
             } else if (gamepad2.y) {
-            /* This is the correct height to score the sample in the LOW BASKET */
+                /* This is the correct height to score the sample in the LOW BASKET */
                 armPosition = ARM_SCORE_SAMPLE_IN_LOW;
+            } else if (gamepad2.right_stick_button) {
+                viperMotor.setPower(0.2);
+
             } else if (gamepad2.dpad_down) {
                     /* This turns off the intake, folds in the wrist, and moves the arm
                     back to folded inside the robot. This is also the starting configuration */
@@ -174,7 +177,8 @@ public class CombinedTeleOp extends LinearOpMode {
                 //wrist.setPosition(WRIST_FOLDED_IN);
             } else if (gamepad2.dpad_right) {
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
-                armPosition = ARM_SCORE_SPECIMEN;
+                armPosition = ARM_SCORE_IN_HIGH;
+
                 wrist.setPosition(WRIST_FOLDED_IN);
             } else if (gamepad2.dpad_up) {
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
