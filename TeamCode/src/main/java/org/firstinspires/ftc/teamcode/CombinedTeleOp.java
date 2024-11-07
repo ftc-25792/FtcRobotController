@@ -13,6 +13,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -29,7 +30,7 @@ public class CombinedTeleOp extends LinearOpMode {
     DcMotor motorBackLeft;
     DcMotor motorBackRight;
     DcMotor armMotor;
-    Servo intake; // Intaking servo
+    CRServo intake; // Intaking servo
     Servo wrist; // Wrist servo
     DcMotor viperMotor;
 
@@ -50,7 +51,7 @@ public class CombinedTeleOp extends LinearOpMode {
     double armPosition = ARM_COLLAPSED_INTO_ROBOT;
     double armPositionFudgeFactor;
     final double WRIST_FOLDED_IN = 0.8333;
-    final double WRIST_FOLDED_OUT = 0.5;
+    final double WRIST_FOLDED_OUT = 0.3;
     final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SPECIMEN = 50 * ARM_TICKS_PER_DEGREE;//160
     final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
@@ -78,10 +79,10 @@ public class CombinedTeleOp extends LinearOpMode {
 
 
         // Set motor directions
-        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        motorFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        motorBackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        motorFrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorFrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Set arm motor to use encoders
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -90,9 +91,9 @@ public class CombinedTeleOp extends LinearOpMode {
         ((DcMotorEx) armMotor).setCurrentAlert(2, CurrentUnit.AMPS);
 
         // Initialize servos
-        intake = hardwareMap.get(Servo.class, "intake");
+        intake = hardwareMap.get(CRServo.class, "intake");
         wrist = hardwareMap.get(Servo.class, "wrist");
-        wrist.setPosition(0.8333); // Folded in position
+        wrist.setPosition(-0.8333); // Folded in position
 
         // Wait for the game driver to press play
         waitForStart();
@@ -131,11 +132,11 @@ public class CombinedTeleOp extends LinearOpMode {
             one cycle. Which can cause strange behavior. */
 
             if (gamepad1.a) {
-                intake.setPosition(INTAKE_COLLECT);
+                intake.setPower(INTAKE_COLLECT);
             } else if (gamepad1.x) {
-                intake.setPosition(INTAKE_OFF);
+                intake.setPower(INTAKE_OFF);
             } else if (gamepad1.b) {
-                intake.setPosition(INTAKE_DEPOSIT);
+                intake.setPower(INTAKE_DEPOSIT);
             }
 
 
@@ -150,9 +151,9 @@ public class CombinedTeleOp extends LinearOpMode {
             if (gamepad2.right_bumper) {
                 /* This is the intaking/collecting arm position */
                 armPosition = ARM_COLLECT;
-                //viperPosition = VIPER_COLLECT;
+                //viperPosition = VIPER_COLLECT`;
                 //wrist.setPosition(WRIST_FOLDED_OUT);
-                viperMotor.setPower(0.2); // Extend Viper slide
+                //viperMotor.setPower(0.2); // Extend Viper slide
                 //intake.setPosition(INTAKE_COLLECT);
             } else if (gamepad2.left_bumper) {
                     /* This is about 20° up from the collecting position to clear the barrier
@@ -179,7 +180,7 @@ public class CombinedTeleOp extends LinearOpMode {
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armPosition = ARM_SCORE_IN_HIGH;
 
-                wrist.setPosition(WRIST_FOLDED_IN);
+                wrist.setPosition(WRIST_FOLDED_OUT);
             } else if (gamepad2.dpad_up) {
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
                 armPosition = ARM_ATTACH_HANGING_HOOK;
