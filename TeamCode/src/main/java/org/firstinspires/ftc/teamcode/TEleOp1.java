@@ -18,6 +18,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @TeleOp(name="CombinedTeleOpWithArmCorrection", group="Linear Opmode")
@@ -35,21 +37,21 @@ public class TEleOp1 extends LinearOpMode {
     // Arm control variables
     final double ARM_TICKS_PER_DEGREE = 7125.16 / 360; // Encoder ticks per degree (assumes specific motor characteristics)
     final double ARM_COLLAPSED_INTO_ROBOT = 0;
-    final double ARM_COLLECT = 4 * ARM_TICKS_PER_DEGREE;//250
+    final double ARM_COLLECT = 5 * ARM_TICKS_PER_DEGREE;//250
     final double ARM_SCORE_SAMPLE_IN_LOW = 30 * ARM_TICKS_PER_DEGREE; //160
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
     final double ARM_SCORE_IN_HIGH = 38 * ARM_TICKS_PER_DEGREE;
 
     //Viper Slide Control Variables
     final double VIPERSLIDE_TICKS_PER_DEGREE = 537.69 / 360;
-    final double VIPER_COLLECT = 50 * VIPERSLIDE_TICKS_PER_DEGREE;
+    final double VIPER_COLLECT = 41 * VIPERSLIDE_TICKS_PER_DEGREE;
     final double VIPER_RETRACTED = 0;
     double viperPosition = VIPER_RETRACTED;
 
     double armPosition = ARM_COLLAPSED_INTO_ROBOT;
     double armPositionFudgeFactor;
     final double WRIST_FOLDED_IN = 0.8333;
-    final double WRIST_FOLDED_OUT = 0.3;
+    final double WRIST_FOLDED_OUT = -1.5;
     final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SPECIMEN = 50 * ARM_TICKS_PER_DEGREE;//160
     final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
@@ -91,12 +93,13 @@ public class TEleOp1 extends LinearOpMode {
         // Initialize servos
         intake = hardwareMap.get(CRServo.class, "intake");
         wrist = hardwareMap.get(Servo.class, "wrist");
-        wrist.setPosition(0.3); // Folded in position
+         // Folded in position
 
         // Wait for the game driver to press play
         waitForStart();
 
         while (opModeIsActive()) {
+
             // Handle motor control
             double leftStickX = gamepad1.left_stick_x;
             double leftStickY = gamepad1.left_stick_y;
@@ -135,8 +138,8 @@ public class TEleOp1 extends LinearOpMode {
                 intake.setPower(INTAKE_OFF);
             } else if (gamepad1.b) {
                 intake.setPower(INTAKE_DEPOSIT);
-               // if (gamepad1.y); {
-                    //wrist.setPosition(WRIST_FOLDED_IN);
+                // if (gamepad1.y); {
+                //wrist.setPosition(WRIST_FOLDED_IN);
                 //}
             }
 
@@ -152,8 +155,9 @@ public class TEleOp1 extends LinearOpMode {
             if (gamepad2.right_bumper) {
                 /* This is the intaking/collecting arm position */
                 armPosition = ARM_COLLECT;
+                sleep(2000);
                 //viperPosition = VIPER_COLLECT`;
-                //wrist.setPosition(WRIST_FOLDED_OUT);
+                wrist.setPosition(WRIST_FOLDED_OUT);
                 //viperMotor.setPower(0.2); // Extend Viper slide
                 //intake.setPosition(INTAKE_COLLECT);
             } else if (gamepad2.left_bumper) {
@@ -163,15 +167,27 @@ public class TEleOp1 extends LinearOpMode {
                     they were doing before we clicked left bumper. */
                 viperMotor.setPower(-0.5); //Retract Viper slide
                 //armPosition = ARM_CLEAR_BARRIER;
-            } else if (gamepad2.left_stick_button) {;
+            } else if (gamepad2.left_stick_button) {
+                ;
                 viperMotor.setPower(0);
             } else if (gamepad2.y) {
                 /* This is the correct height to score the sample in the LOW BASKET */
                 armPosition = ARM_SCORE_SAMPLE_IN_LOW;
             } else if (gamepad2.right_stick_button) {
-                viperMotor.setPower(0.4);
+                ElapsedTime runtime = new ElapsedTime();
 
-            } else if (gamepad2.dpad_down) {
+                runtime.startTime();
+                viperMotor.setPower(0.4);
+                while (viperMotor.isBusy() || runtime.seconds() < 3) {
+                    ;
+
+                }
+                viperMotor.setPower(0);
+            }
+
+
+
+             else if (gamepad2.dpad_down) {
                     /* This turns off the intake, folds in the wrist, and moves the arm
                     back to folded inside the robot. This is also the starting configuration */
                 armPosition = ARM_WINCH_ROBOT;
