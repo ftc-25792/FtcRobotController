@@ -29,7 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -48,13 +48,13 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
-@TeleOp(name = "Concept: Scan Servo Arnav", group = "TeleOp")
+@TeleOp(name = "Concept: Scan Servo", group = "TeleOp")
 
-public class ConceptScanServo extends LinearOpMode {
+public class AutonomousBlue extends LinearOpMode {
 
-    static final double INCREMENT   = 0.01;     // 0.01 amount to slew servo each CYCLE_MS cycle
-    static final int    CYCLE_MS    =   50;     // period of each cycle
-    static final double MAX_POS     =  1.0;     // Maximum rotational position
+    static final double INCREMENT   = 0.1;     // 0.01 amount to slew servo each CYCLE_MS cycle
+    static final int    CYCLE_MS    =  500;     // period of each cycle
+    static final double MAX_POS     =  1;     // Maximum rotational position
     static final double MIN_POS     =  0.0;     // Minimum rotational position
 
     // Define class members
@@ -66,17 +66,17 @@ public class ConceptScanServo extends LinearOpMode {
     boolean rampUp = true;
 
 
-    static final int SERVO_COUNT = 4;
+    static final int SERVO_COUNT = 2;
     @Override
     public void runOpMode() {
 
         servo  = new  Servo [SERVO_COUNT];
         // Connect to servo (Assume Robot Left Hand)
         // Change the text in quotes to match any servo name on your robot.
-        servo[0] = hardwareMap.get(Servo.class, "servo1");
-        servo[1] = hardwareMap.get(Servo.class, "servo2");
-        servo[2] = hardwareMap.get(Servo.class, "servo3");
-        servo[3] = hardwareMap.get(Servo.class, "servo4");
+        servo[0] = hardwareMap.get(Servo.class, "intake");
+        servo[1] = hardwareMap.get(Servo.class, "wrist");
+//        servo[2] = hardwareMap.get(Servo.class, "servo3");
+//        servo[3] = hardwareMap.get(Servo.class, "servo4");
 
 
         // Wait for the start button
@@ -92,10 +92,10 @@ public class ConceptScanServo extends LinearOpMode {
             if (rampUp) {
                 // Keep stepping up until we hit the max value.
                 position += INCREMENT ;
-                if (position >= MAX_POS ) {
-                    position = MAX_POS;
-                    rampUp = !rampUp;   // Switch ramp direction
-                }
+//                if (position >= MAX_POS ) {
+//                    position = MAX_POS;
+//                    rampUp = !rampUp;   // Switch ramp direction
+//                }
             }
             else {
                 // Keep stepping down until we hit the min value.

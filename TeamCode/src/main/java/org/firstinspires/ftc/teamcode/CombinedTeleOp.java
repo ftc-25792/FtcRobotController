@@ -1,85 +1,54 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- * Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name="CombinedTeleOpWithHoldingArmPosition", group="Linear Opmode")
-public class CombinedTeleOp extends OpMode {
-    // Declare motors
-    DcMotor motorFrontLeft;
-    DcMotor motorFrontRight;
-    DcMotor motorBackLeft;
-    DcMotor motorBackRight;
-    DcMotor armMotor;
-    DcMotor viperMotor; // For the Viper slide
-    IMU imu;
-
-    // Servo variables
-    Servo[] servo;
-    static final double INCREMENT = 0.1; // Amount to increment/decrement servo position
-    static final double MAX_POS = 1.0; // Maximum servo position
-    static final double MIN_POS = 0.0; // Minimum servo position
-    double[] positions; // Current positions for each servo
+@TeleOp(name="CombinedTeleOpWithArmCorrection", group="Linear Opmode")
+public class CombinedTeleOp extends LinearOpMode {
+    // Declare motors and servos
+    DcMotor motorFrontLeft, motorFrontRight, motorBackLeft, motorBackRight;
+    DcMotor viperMotor, armMotor;
+    Servo intake, wrist;
 
     // Arm control variables
-    int targetArmPosition = 0; // Target position for the arm
-    boolean armMoving = false; // Flag to track if the arm is moving
+    final double FINAL_EXTENDED_POSITION = 25;
+    final double ARM_TICKS_PER_DEGREE = 7125.16 / 360;
+    final double ARM_COLLAPSED_INTO_ROBOT = 0;
+    final double ARM_COLLECT = 250 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SAMPLE_IN_LOW = 160 * ARM_TICKS_PER_DEGREE;
+    final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SPECIMEN = 160 * ARM_TICKS_PER_DEGREE;
+    final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
+    final double ARM_WINCH_ROBOT = 20 * ARM_TICKS_PER_DEGREE;
 
-    // PID control variables
-    double kp = 0.02; // Proportional gain
-    double ki = 0.0;  // Integral gain (not used in this basic implementation)
-    double kd = 0.01; // Derivative gain
-    double lastError = 0.0; // Last error value for derivative calculation
-    double integral = 0.0; // Integral error (optional for more stability)
+    final double INTAKE_COLLECT = -1.0;
+    final double INTAKE_OFF = 0.0;
+    final double INTAKE_DEPOSIT = 20.5;
 
-    // Arm control states
-    enum ArmState {
-        MOVING_UP,
-        MOVING_DOWN,
-        HOLDING
-    }
+    final double WRIST_FOLDED_IN = 0.8333;
+    final double WRIST_FOLDED_OUT = 0.5;
 
-    ArmState armState = ArmState.HOLDING; // Initial state
+    double armPosition = ARM_COLLAPSED_INTO_ROBOT;
+    double armPositionFudgeFactor;
+    final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
 
     @Override
-    public void init() {
-        // Initialize motors
+    public void runOpMode() {
+        // Initialize motors and servos
         motorFrontLeft = hardwareMap.get(DcMotor.class, "Left_front");
         motorFrontRight = hardwareMap.get(DcMotor.class, "Right_front");
         motorBackLeft = hardwareMap.get(DcMotor.class, "Left_rear");
         motorBackRight = hardwareMap.get(DcMotor.class, "Right_rear");
         armMotor = hardwareMap.get(DcMotor.class, "armMotor");
         viperMotor = hardwareMap.get(DcMotor.class, "viperMotor");
+        intake = hardwareMap.get(Servo.class, "intake");
+        wrist = hardwareMap.get(Servo.class, "wrist");
 
         // Set motor directions
-        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
         motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         motorFrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -87,136 +56,78 @@ public class CombinedTeleOp extends OpMode {
         // Set arm motor to use encoders
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Initialize the IMU
-        imu = hardwareMap.get(IMU.class, "imu");
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
-        imu.initialize(new IMU.Parameters(orientationOnRobot));
+        // Initialize wrist in folded position
+        wrist.setPosition(WRIST_FOLDED_IN);
 
-        // Initialize servos
-        int SERVO_COUNT = 4;
-        servo = new Servo[SERVO_COUNT];
-        positions = new double[SERVO_COUNT]; // Array to hold positions for each servo
-        for (int i = 0; i < SERVO_COUNT; i++) {
-            servo[i] = hardwareMap.get(Servo.class, "servo" + (i + 1));
-            positions[i] = MIN_POS; // Start all servos at minimum position
-            servo[i].setPosition(positions[i]);
+        // Wait for the game driver to press play
+        waitForStart();
+
+        while (opModeIsActive()) {
+            // Handle motor control for drive
+            double leftStickX = gamepad1.left_stick_x;
+            double leftStickY = gamepad1.left_stick_y;
+            double rightStickX = gamepad1.right_stick_x;
+
+            // Calculate and set wheel powers
+            double frontLeftPower = leftStickY + leftStickX;
+            double frontRightPower = leftStickY - leftStickX;
+            double backLeftPower = leftStickY + rightStickX;
+            double backRightPower = leftStickY - rightStickX;
+
+            motorFrontLeft.setPower(frontLeftPower);
+            motorFrontRight.setPower(frontRightPower);
+            motorBackLeft.setPower(backLeftPower);
+            motorBackRight.setPower(backRightPower);
+
+            // Handle arm position and control
+            updateArmControl();
+
+
+
+            // Send telemetry
+            telemetry.addData("armTarget: ", armMotor.getTargetPosition());
+            telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+            telemetry.update();
         }
     }
 
-    @Override
-    public void loop() {
-        // Handle motor control
-        double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = gamepad1.left_stick_y;
-        double rightStickX = gamepad1.right_stick_x;
-        boolean triangle = gamepad1.y; // Button to move arm up
-        boolean aButton = gamepad1.a; // Button to retract arm
-        boolean rightTrigger = gamepad1.right_trigger > 0.9; // Trigger to extend Viper slide
-        boolean leftTrigger = gamepad1.left_trigger > 0.9; // Trigger to retract Viper slide
-        boolean right = gamepad1.dpad_right; // Button to increment servo position
-        boolean left = gamepad1.dpad_left; // Button to decrement servo position
+    private void updateArmControl() {
+        if (gamepad2.right_bumper) {
+            armPosition = ARM_COLLECT;
+            wrist.setPosition(WRIST_FOLDED_OUT);
+            intake.setPosition(INTAKE_COLLECT);
+        } else if (gamepad2.left_bumper) {
+            armPosition = ARM_CLEAR_BARRIER;
+        } else if (gamepad2.y) {            
+            armPosition = ARM_SCORE_SAMPLE_IN_LOW;
+        } else if (gamepad2.dpad_left) {
+            armPosition = ARM_COLLAPSED_INTO_ROBOT;
+            wrist.setPosition(WRIST_FOLDED_IN);
+            intake.setPosition(INTAKE_OFF);
+//        } else if (gamepad2.left_bumper) {
+//            armPosition = ARM_SCORE_SPECIMEN;
+//            wrist.setPosition(WRIST_FOLDED_IN);
+        } else if (gamepad2.dpad_up) {
+            armPosition = ARM_ATTACH_HANGING_HOOK;
+            intake.setPosition(INTAKE_OFF);
+        } else if (gamepad2.dpad_down) {
+            armPosition = ARM_WINCH_ROBOT;
+            intake.setPosition(INTAKE_OFF);
 
-        // Calculate wheel powers
-        double frontLeftPower = leftStickY + leftStickX;
-        double frontRightPower = leftStickY - leftStickX;
-        double backLeftPower = leftStickY + rightStickX;
-        double backRightPower = leftStickY - rightStickX;
+        } else if (gamepad2.left_stick_button) {
+            viperMotor.setPower(FINAL_EXTENDED_POSITION);
+        } else if (gamepad2.right_stick_button) {
+            viperMotor.setPower(-25);
+            {
 
-        // Set motor powers
-        motorFrontLeft.setPower(frontLeftPower);
-        motorFrontRight.setPower(frontRightPower);
-        motorBackLeft.setPower(backLeftPower);
-        motorBackRight.setPower(backRightPower);
 
-        // Control arm with triangle button (up) and A button (down)
-        if (triangle) {
-            armState = ArmState.MOVING_UP;
-            targetArmPosition += 20; // Increment target position (adjust as needed)
-            armMoving = true; // Set moving flag
-        } else if (aButton) {
-            armState = ArmState.MOVING_DOWN;
-            targetArmPosition -= 20; // Decrement target position (adjust as needed)
-            armMoving = true; // Set moving flag
-        } else {
-            armState = ArmState.HOLDING;
-        }
-
-        // Get the current position
-        int currentPosition = armMotor.getCurrentPosition();
-
-        // Control logic based on state
-        switch (armState) {
-            case MOVING_UP:
-                armMotor.setPower(0.25); // Move up at full power
-                break;
-
-            case MOVING_DOWN:
-                armMotor.setPower(-0.15); // Move down at full power
-                break;
-
-            case HOLDING:
-                // Calculate PID output
-                double error = targetArmPosition - currentPosition;
-                integral += error; // Accumulate integral
-                double derivative = error - lastError;
-                double output = (kp * error) + (kd * derivative);
-
-                // Set motor power based on PD output
-                armMotor.setPower(Range.clip(output, -1.0, 1.0)); // Clip power to valid range
-
-                // Update last error
-                lastError = error;
-
-                // Optional: Stop if within a small threshold
-                if (Math.abs(error) < 2) { // Threshold
-                    armMotor.setPower(0.0); // Stop motor if close enough
-                }
-                break;
-        }
-
-        // Control Viper slide
-        if (rightTrigger) {
-            viperMotor.setPower(1.0); // Extend Viper slide
-        } else if (leftTrigger) {
-            viperMotor.setPower(-1.0); // Retract Viper slide
-        } else {
-            viperMotor.setPower(0.0); // Stop Viper slide
-        }
-
-        // Control servo positions with buttons
-        if (right) { // Increment position
-            for (int i = 0; i < servo.length; i++) {
-                if (positions[i] < MAX_POS) {
-                    positions[i] += INCREMENT;
-                    if (positions[i] > MAX_POS) {
-                        positions[i] = MAX_POS; // Clamp to max
-                    }
-                    servo[i].setPosition(positions[i]);
-                }
+                // Fudge factor for arm control
+                armPositionFudgeFactor = FUDGE_FACTOR * (gamepad2.right_trigger + (-gamepad2.left_trigger));
+                armMotor.setTargetPosition((int) (armPosition + armPositionFudgeFactor));
+                armMotor.setPower(0.1);
             }
         }
-
-        if (left) { // Decrement position
-            for (int i = 0; i < servo.length; i++) {
-                if (positions[i] > MIN_POS) {
-                    positions[i] -= INCREMENT;
-                    if (positions[i] < MIN_POS) {
-                        positions[i] = MIN_POS; // Clamp to min
-                    }
-                    servo[i].setPosition(positions[i]);
-                }
-            }
-        }
-
-        // Telemetry for debugging
-        for (int i = 0; i < servo.length; i++) {
-            telemetry.addData("Servo " + (i + 1) + " Position", "%5.2f", positions[i]);
-        }
-        telemetry.addData("Arm Target Position", targetArmPosition);
-        telemetry.addData("Arm Current Position", currentPosition);
-        telemetry.update();
     }
 }
