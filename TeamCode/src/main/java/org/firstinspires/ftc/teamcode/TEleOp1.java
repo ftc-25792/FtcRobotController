@@ -22,7 +22,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name="CombinedTeleOpWithArmCorrection", group="Linear Opmode")
+@TeleOp(name="FinalTeleOp", group="Linear Opmode")
 public class TEleOp1 extends LinearOpMode {
     // Declare motors
     DcMotor motorFrontLeft;
@@ -51,7 +51,7 @@ public class TEleOp1 extends LinearOpMode {
     double armPosition = ARM_COLLAPSED_INTO_ROBOT;
     double armPositionFudgeFactor;
     final double WRIST_FOLDED_IN = 0.8333;
-    final double WRIST_FOLDED_OUT = -1.5;
+    final double WRIST_FOLDED_OUT = 0.3;
     final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SPECIMEN = 50 * ARM_TICKS_PER_DEGREE;//160
     final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
@@ -179,6 +179,8 @@ public class TEleOp1 extends LinearOpMode {
                 runtime.startTime();
                 viperMotor.setPower(0.4);
                 while (viperMotor.isBusy() || runtime.seconds() < 3) {
+                    if (gamepad2.b)
+                        break;
                     ;
 
                 }

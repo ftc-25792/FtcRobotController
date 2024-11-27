@@ -68,27 +68,21 @@ public class AutonomousBlueSCORE extends LinearOpMode {
 
 
         telemetry.update();
-        driveForward(1);
+        driveForward(0.05);
         armMotor.setPower(1);
         sleep(50);
         wrist.setPosition(-0.833);
-        turn(-TURN_ANGLE);
-        driveForward(FORWARD_DISTANCE);
+        turn(TURN_ANGLE);
+        driveForward(0.5);
         armMotor.setPower(ARM_SCORE_IN_HIGH);
-        sleep(400);
-        viperMotor.setPower(1);
+        sleep(100);
+        viperMotor.setPower(0.2);
         sleep(400);
         intake.setPower(-1);
-        viperMotor.setPower(-1);
+        viperMotor.setPower(-0.2);
         sleep(400);
         driveForward(-FORWARD_DISTANCE);
         driveForward(-FORWARD_DISTANCE);
-
-
-
-
-
-
     }
 
     private void driveForward(double distance) {

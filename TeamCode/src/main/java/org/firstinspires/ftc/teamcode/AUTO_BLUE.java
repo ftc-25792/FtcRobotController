@@ -3,8 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
@@ -16,11 +19,14 @@ public class AUTO_BLUE extends LinearOpMode {
     private DcMotor rightFrontMotor;
     private DcMotor rightRearMotor;
     private IMU imu;
+    CRServo intake;
+    Servo wrist;
 
     private static final double FORWARD_DISTANCE = 0.5; // Adjust distance in meters
     private static final double TURN_ANGLE = -90.0; // Degrees to turn
     private static final double DRIVE_SPEED = 0.5; // Speed for driving
-
+    final double WRIST_FOLDED_IN   = 0.8333;
+    final double WRIST_FOLDED_OUT  = 0.5;
     @Override
     public void runOpMode() {
         // Initialize motors
@@ -28,6 +34,8 @@ public class AUTO_BLUE extends LinearOpMode {
         rightFrontMotor = hardwareMap.get(DcMotor.class, "Right_front");
         leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
         rightRearMotor = hardwareMap.get(DcMotor.class, "Right_rear");
+        intake = hardwareMap.get(CRServo.class, "intake");
+        wrist = hardwareMap.get(Servo.class, "wrist");
 
         // Set motor directions
         rightRearMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -45,15 +53,15 @@ public class AUTO_BLUE extends LinearOpMode {
         waitForStart();
 
 
-        int LoopCount = 10;
-
+        
         // Drive in a squarefor (int i = 1; i <= LoopCount; i++)
-
-
+            wrist.setPosition(WRIST_FOLDED_IN);
+            sleep(200);
+            wrist.setPosition(WRIST_FOLDED_OUT);
             telemetry.update();
-            driveForward(1);
+            driveForward(0.10);
             turn(TURN_ANGLE);
-            driveForward(FORWARD_DISTANCE);
+            driveForward(42);
 
 
 
@@ -75,7 +83,7 @@ public class AUTO_BLUE extends LinearOpMode {
         while (targetAngle < -180) targetAngle += 360;
 
 
-        double power = 0.1;
+        double power = 0.3;
 
         // Set motors for turning
         leftFrontMotor.setPower(power);

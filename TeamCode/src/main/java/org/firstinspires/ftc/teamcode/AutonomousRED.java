@@ -31,6 +31,7 @@ public class AutonomousRED extends LinearOpMode {
     private static final double FORWARD_DISTANCE = 0.5; // Adjust distance in meters
     private static final double TURN_ANGLE = -90.0; // Degrees to turn
     private static final double DRIVE_SPEED = 0.5; // Speed for driving
+    private static final double ENCODER_COUNTS_PER_INCH = 1120; // This value needs to be adjusted to your robot's specifications
 
     @Override
     public void runOpMode() {
@@ -39,9 +40,7 @@ public class AutonomousRED extends LinearOpMode {
         rightFrontMotor = hardwareMap.get(DcMotor.class, "Right_front");
         leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
         rightRearMotor = hardwareMap.get(DcMotor.class, "Right_rear");
-        armMotor = hardwareMap.get(DcMotor.class, "armMotor");
-        viperMotor = hardwareMap.get(DcMotor.class, "viperMotor");
-        intake = hardwareMap.get(CRServo.class, "intake");
+
         wrist = hardwareMap.get(Servo.class, "wrist");
         wrist.setPosition(0.8333); // Folded in position
 
@@ -60,22 +59,14 @@ public class AutonomousRED extends LinearOpMode {
 
         waitForStart();
 
-
-
-
-
-
-
         telemetry.update();
-        driveForward(1);
-        turn(-TURN_ANGLE);
+        driveForward(0.05);
+        turn(TURN_ANGLE);
         driveForward(FORWARD_DISTANCE);
         driveForward(FORWARD_DISTANCE);
 
-
-
-
-
+        // Strafe right for a short distance (distance in inches)
+        strafeRight(24); // Adjust distance as needed
     }
 
     private void driveForward(double distance) {
@@ -85,6 +76,43 @@ public class AutonomousRED extends LinearOpMode {
         sleep(1500); // Pause briefly after moving forward
     }
 
+    private void strafeRight(double targetDistanceInInches) {
+        // Calculate target encoder counts for strafing right
+        int targetPosition = (int) (targetDistanceInInches * ENCODER_COUNTS_PER_INCH); // Encoder counts per inch
+
+        // Reset encoders
+        leftFrontMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftRearMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightRearMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // Set encoders to run to position mode
+        leftFrontMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftRearMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightFrontMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightRearMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Set motor powers to strafe
+        leftFrontMotor.setPower(0.5);
+        leftRearMotor.setPower(-0.5);
+        rightFrontMotor.setPower(-0.5);
+        rightRearMotor.setPower(0.5);
+
+        // Move to the target position
+        while (opModeIsActive() &&
+                (leftFrontMotor.isBusy() && rightFrontMotor.isBusy() &&
+                        leftRearMotor.isBusy() && rightRearMotor.isBusy())) {
+            telemetry.addData("Strafing", "Moving to position");
+            telemetry.addData("Target Position", targetPosition);
+            telemetry.addData("Current Position", leftFrontMotor.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Stop the motors once the target distance is reached
+        setMotorPower(0);
+        sleep(1000); // Pause briefly after completing the strafe
+    }
+
     private void turn(double angle) {
         double startAngle = getHeading();
         double targetAngle = startAngle + angle;
@@ -92,7 +120,6 @@ public class AutonomousRED extends LinearOpMode {
         // Normalize the angle to keep it within -180 to 180 degrees
         while (targetAngle >= 180) targetAngle -= 360;
         while (targetAngle < -180) targetAngle += 360;
-
 
         double power = 0.1;
 
@@ -105,10 +132,9 @@ public class AutonomousRED extends LinearOpMode {
         // Continue turning until the target angle is reached
         while (opModeIsActive() && !isAngleReached(targetAngle)) {
             telemetry.addData("Current Angle", getHeading());
-            telemetry.addData("Start ANgele",startAngle);
+            telemetry.addData("Start Angle", startAngle);
             telemetry.addData("Target Angle", targetAngle);
             telemetry.update();
-            // sleep(1000);
         }
 
         setMotorPower(0); // Stop all motors
@@ -128,9 +154,6 @@ public class AutonomousRED extends LinearOpMode {
         while (currentAngle >= 180) currentAngle -= 360;
         while (currentAngle < -180) currentAngle += 360;
         double error = currentAngle - targetAngle;
-
-
-
 
         return Math.abs(error) < 1.0; // Tolerance can be adjusted
     }
