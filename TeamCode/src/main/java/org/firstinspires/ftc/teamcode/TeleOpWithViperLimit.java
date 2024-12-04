@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @TeleOp(name="SERVO TELE OP", group="Linear Opmode")
-public class CombinedTeleOp2 extends LinearOpMode {
+public class TeleOpWithViperLimit extends LinearOpMode {
     // Declare motors
     DcMotor motorFrontLeft;
     DcMotor motorFrontRight;
