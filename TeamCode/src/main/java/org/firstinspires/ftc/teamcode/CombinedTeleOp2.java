@@ -1,13 +1,5 @@
 
 
-/* Copyright (c) 2017 FIRST. All rights reserved.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- * ...
- * (Include the entire license text here, from the first class)
- * ...
- */
 
 package org.firstinspires.ftc.teamcode;
 
@@ -33,16 +25,19 @@ public class CombinedTeleOp2 extends LinearOpMode {
     DcMotor viperMotor;
 
     // Arm control variables
-    final double ARM_TICKS_PER_DEGREE = 7125.16 / 360; // Encoder ticks per degree (assumes specific motor characteristics)
+    double viperposition = 0.0;
+    final double ARM_TICKS_PER_DEGREE = 7125.16 / 360;
     final double ARM_COLLAPSED_INTO_ROBOT = 0;
     final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;//250
     final double ARM_SCORE_SAMPLE_IN_LOW = 30 * ARM_TICKS_PER_DEGREE; //160
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
     final double ARM_SCORE_IN_HIGH = 40 * ARM_TICKS_PER_DEGREE;
 
+
     //Viper Slide Control Variables
-    final double VIPERSLIDE_TICKS_PER_DEGREE = 537.69 / 360;
-    final double VIPER_COLLECT = 50 * VIPERSLIDE_TICKS_PER_DEGREE;
+    final double VIPERSLIDE_TICKS_PER_DEGREE = 537.7 / 360;
+    final double VIPER_COLLECT = 15 * VIPERSLIDE_TICKS_PER_DEGREE;
+    final double Maxposition = 45 * VIPERSLIDE_TICKS_PER_DEGREE;
 
 
     double armPosition = ARM_COLLAPSED_INTO_ROBOT;
@@ -120,7 +115,11 @@ public class CombinedTeleOp2 extends LinearOpMode {
             }
 
             if (gamepad2.b) {
-                viperMotor.setPower(1); // Extend Viper slide
+                viperposition = viperMotor.getCurrentPosition();
+                if(viperposition <= Maxposition )
+                    viperMotor.setPower(VIPER_COLLECT);
+
+
             } else if (gamepad2.x) {
                 viperMotor.setPower(-1); // Retract Viper slide
             } else {
