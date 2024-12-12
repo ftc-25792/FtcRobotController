@@ -1,0 +1,171 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
+@TeleOp(name="Meet 2 V1 for Kammander", group="Linear Opmode")
+public class KammanderMeet2V1 extends LinearOpMode {
+
+    // Declare motors and servos
+    DcMotor motorFrontLeft, motorFrontRight, motorBackLeft, motorBackRight;
+    DcMotor armMotor, viperMotor;
+    CRServo intake, wrist;
+
+    // Arm control variables
+    double viperPosition = 0.0;
+    final double ARM_TICKS_PER_DEGREE = 7125.16 / 360;
+    final double ARM_COLLAPSED_INTO_ROBOT = 0;
+    final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_IN_HIGH = 40 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SPECIMEN = 50 * ARM_TICKS_PER_DEGREE;
+    final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
+    final double ARM_CLEAR_BARRIER = 230 * ARM_TICKS_PER_DEGREE;
+    final double ARM_ATTACH_HANGING_HOOK = 120 * ARM_TICKS_PER_DEGREE;
+    final double ARM_WINCH_ROBOT = 0;
+
+    // Viper Slide Control Variables
+    final double VIPERSLIDE_TICKS_PER_DEGREE = 537.7 / 360;
+    final double VIPER_COLLECT = 15 * VIPERSLIDE_TICKS_PER_DEGREE;
+    final double MaxPosition = 45 * VIPERSLIDE_TICKS_PER_DEGREE;
+
+    double armPosition = ARM_COLLAPSED_INTO_ROBOT;
+    double armPositionFudgeFactor;
+    final double WRIST_FOLDED_IN = 0.8333;
+    final double WRIST_FOLDED_OUT = 0.5;
+
+    final double INTAKE_COLLECT = 1;
+    final double INTAKE_OFF = 0;
+    final double INTAKE_DEPOSIT = -1;
+
+    @Override
+    public void runOpMode() {
+        // Initialize motors and servos
+        motorFrontLeft = hardwareMap.get(DcMotor.class, "Left_front");
+        motorFrontRight = hardwareMap.get(DcMotor.class, "Right_front");
+        motorBackLeft = hardwareMap.get(DcMotor.class, "Left_rear");
+        motorBackRight = hardwareMap.get(DcMotor.class, "Right_rear");
+        armMotor = hardwareMap.get(DcMotor.class, "armMotor");
+        viperMotor = hardwareMap.get(DcMotor.class, "viperMotor");
+
+        // Set motor directions
+        motorFrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorBackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // Set arm motor to use encoders
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        ((DcMotorEx) armMotor).setCurrentAlert(2, CurrentUnit.AMPS);
+
+        // Set viper motor to use encoders
+        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        viperMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // Initialize servos
+        intake = hardwareMap.get(CRServo.class, "intake");
+        wrist = hardwareMap.get(CRServo.class, "wrist");
+        wrist.setPower(WRIST_FOLDED_IN); // Set wrist to folded-in position initially
+
+        // Wait for the game driver to press play
+        waitForStart();
+
+        while (opModeIsActive()) {
+            double max;
+
+            // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
+            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double lateral =  gamepad1.left_stick_x;
+            double yaw     =  gamepad1.right_stick_x;
+
+            // Combine the joystick requests for each axis-motion to determine each wheel's power.
+            // Set up a variable for each drive wheel to save the power level for telemetry.
+            double leftFrontPower  = axial + lateral + yaw;
+            double rightFrontPower = axial - lateral - yaw;
+            double leftBackPower   = axial - lateral + yaw;
+            double rightBackPower  = axial + lateral - yaw;
+
+            // Normalize the values so no wheel power exceeds 100%
+            // This ensures that the robot maintains the desired motion.
+            max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+
+            if (max > 1.0) {
+                leftFrontPower  /= max;
+                rightFrontPower /= max;
+                leftBackPower   /= max;
+                rightBackPower  /= max;
+            }
+            // Handle intake controls
+            if (gamepad1.a) {
+                intake.setPower(INTAKE_COLLECT);
+            } else if (gamepad1.x) {
+                intake.setPower(INTAKE_OFF);
+            } else if (gamepad1.b) {
+                intake.setPower(INTAKE_DEPOSIT);
+            }
+
+            // Handle wrist controls
+            if (gamepad1.right_bumper) {
+                wrist.setPower(0.5); // Unfold wrist
+            } else if (gamepad1.left_bumper) {
+                wrist.setPower(-0.5); // Fold wrist
+            } else if (gamepad1.y) {
+                wrist.setPower(0); // Stop wrist
+
+                // Handle arm controls using gamepad2
+                if (gamepad2.right_bumper) {
+                    // Collect position
+                    armPosition = ARM_COLLECT;
+                } else if (gamepad2.left_bumper) {
+                    // Retract arm to clear barrier
+                    viperMotor.setPower(-1); // Retract viper slide
+                } else if (gamepad2.y) {
+                    // Score on high position
+                    armPosition = ARM_SCORE_IN_HIGH;
+                } else if (gamepad2.b) {
+                    // Viper slide collect position
+                    viperPosition = viperMotor.getCurrentPosition();
+                    if (viperPosition <= MaxPosition) {
+                        viperMotor.setPower(VIPER_COLLECT);
+                    }
+                } else if (gamepad2.dpad_down) {
+                    // Fold in arm and reset configuration
+                    armPosition = ARM_WINCH_ROBOT;
+                } else if (gamepad2.dpad_up) {
+                    // Set arm to position for hanging
+                    armPosition = ARM_ATTACH_HANGING_HOOK;
+                } else {
+                    armMotor.setPower(0.0); // Stop arm motor
+                }
+
+                // Apply the fudge factor to the arm position using triggers for fine adjustments
+                armPositionFudgeFactor = FUDGE_FACTOR * (gamepad1.right_trigger - gamepad1.left_trigger);
+
+                // Set target position of arm motor based on the calculated position
+                armMotor.setTargetPosition((int) (armPosition + armPositionFudgeFactor));
+                ((DcMotorEx) armMotor).setPower(0.1);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                // Send telemetry to the driver
+                telemetry.addData("Arm Target: ", armMotor.getTargetPosition());
+                telemetry.addData("Arm Encoder: ", armMotor.getCurrentPosition());
+                telemetry.update();
+
+                // Check current limits for arm motor and report if exceeded
+                if (((DcMotorEx) armMotor).isOverCurrent()) {
+                    telemetry.addLine("MOTOR EXCEEDED CURRENT LIMIT!");
+                }
+            }
+        }
+    }
+}
