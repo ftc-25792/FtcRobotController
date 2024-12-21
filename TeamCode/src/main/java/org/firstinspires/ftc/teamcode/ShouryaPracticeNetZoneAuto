@@ -1,0 +1,114 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
+@Autonomous(name = "AUTO CODE FOR SCORING", group = "Autonomous")
+public class shouryapracticeauto extends LinearOpMode {
+
+    private DcMotor leftFrontMotor;
+    private DcMotor leftRearMotor;
+    private DcMotor rightFrontMotor;
+    private DcMotor rightRearMotor;
+
+    @Override
+    public void runOpMode() {
+        // Initialize motors
+        leftFrontMotor = hardwareMap.get(DcMotor.class, "Left_front");
+        rightFrontMotor = hardwareMap.get(DcMotor.class, "Right_front");
+        leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
+        rightRearMotor = hardwareMap.get(DcMotor.class, "Right_rear");
+
+        // Set motor directions
+        rightRearMotor.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftRearMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontMotor.setDirection(DcMotor.Direction.FORWARD);
+
+        //Strafe left
+        leftFrontMotor.setPower(-0.5);
+        leftRearMotor.setPower(0.5);
+        rightFrontMotor.setPower(0.5);
+        rightRearMotor.setPower(-0.5);
+        sleep(3000);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(5000);
+        
+        //Move forward
+        leftFrontMotor.setPower(0.5);
+        leftRearMotor.setPower(0.5);
+        rightFrontMotor.setPower(0.5);
+        rightRearMotor.setPower(0.5);
+        sleep(3000);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(1000);
+        
+        //Turn 180 Degrees
+        leftFrontMotor.setPower(0.5);
+        leftRearMotor.setPower(0.5);
+        rightFrontMotor.setPower(-0.5);
+        rightRearMotor.setPower(-0.5);
+        sleep(360);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(1000);
+        
+        //Drive forward and score in net zone
+        leftFrontMotor.setPower(0.5);
+        leftRearMotor.setPower(0.5);
+        rightFrontMotor.setPower(0.5);
+        rightRearMotor.setPower(0.5);
+        sleep(3000);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(1000);
+        
+        //Turn 90 degrees to the left
+        leftFrontMotor.setPower(-0.5);
+        leftRearMotor.setPower(-0.5);
+        rightFrontMotor.setPower(0.5);
+        rightRearMotor.setPower(0.5);
+        sleep(180);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(1000);
+        
+        //Park in observation zone
+        leftFrontMotor.setPower(0.5);
+        leftRearMotor.setPower(0.5);
+        rightFrontMotor.setPower(0.5);
+        rightRearMotor.setPower(0.5);
+        sleep(2000);
+
+        leftFrontMotor.setPower(0);
+        leftRearMotor.setPower(0);
+        rightFrontMotor.setPower(0);
+        rightRearMotor.setPower(0);
+        sleep(1000);
+        }
+}
