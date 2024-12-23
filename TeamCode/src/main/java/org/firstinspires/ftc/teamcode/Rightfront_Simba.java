@@ -6,8 +6,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 
-@Autonomous(name = "RightFront", group = "Autonomous")
-public class Rightfront extends LinearOpMode {
+@Autonomous(name = "SimbaRightFront", group = "Autonomous")
+public class Rightfront_Simba extends LinearOpMode {
 
     private DcMotor RightFront; // Only one motor is needed
     private IMU imu;

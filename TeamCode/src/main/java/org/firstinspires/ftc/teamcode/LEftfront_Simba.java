@@ -4,11 +4,10 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
-@Autonomous(name = "Left Front", group = "Autonomous")
-public class LEftfront extends LinearOpMode {
+@Autonomous(name = "Simba Left Front", group = "Autonomous")
+public class LEftfront_Simba extends LinearOpMode {
 
     private DcMotor leftFront; // Only one motor is needed
     private IMU imu;
