@@ -6,10 +6,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 
-@Autonomous(name = "Arm test", group = "Autonomous")
-public class Arm extends LinearOpMode {
+@Autonomous(name = "SimbaLeftRear", group = "Autonomous")
+public class Simba_LeftRear extends LinearOpMode {
 
-    private DcMotor leftFront; // Only one motor is needed
+    private DcMotor leftRearMotor; // Only one motor is needed
     private IMU imu;
 
     private static final double FORWARD_DISTANCE = 0.5; // Adjust distance in meters
@@ -18,10 +18,10 @@ public class Arm extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Initialize motor
-        leftFront = hardwareMap.get(DcMotor.class, "Arm");
+        leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
 
         // Set motor direction
-        leftFront.setDirection(DcMotor.Direction.FORWARD);
+        leftRearMotor.setDirection(DcMotor.Direction.REVERSE);
 
         // Initialize the IMU
         imu = hardwareMap.get(IMU.class, "imu");
@@ -44,6 +44,6 @@ public class Arm extends LinearOpMode {
     }
 
     private void setMotorPower(double power) {
-        leftFront.setPower(power);
+        leftRearMotor.setPower(power);
     }
 }

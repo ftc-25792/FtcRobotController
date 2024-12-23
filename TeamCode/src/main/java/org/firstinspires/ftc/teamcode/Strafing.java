@@ -103,7 +103,7 @@ public class Strafing extends LinearOpMode {
         sleep(1000);
         UpDiagonalStraf(0.6,true);
         sleep(1001);
-        DownDiagonalStraf(0.6,false);
+        DownDiagonalStraf(0.6,false );
         sleep(1000);
         UpDiagonalStraf(0.6,false);
         sleep(1001);
@@ -168,12 +168,11 @@ public class Strafing extends LinearOpMode {
         if (IsLowerLeft== true) {
             rightRearMotor.setPower(-DRIVE_SPEED);
             leftFrontMotor.setPower(-DRIVE_SPEED);
-            rightFrontMotor.setPower(DRIVE_SPEED);
-            leftRearMotor.setPower(DRIVE_SPEED);
+
 
         }else{
-            rightFrontMotor.setPower(DRIVE_SPEED);
-            leftRearMotor.setPower(DRIVE_SPEED);
+            rightFrontMotor.setPower(-DRIVE_SPEED);
+            leftRearMotor.setPower(-DRIVE_SPEED);
         }
         sleep((long) (distance * 1000 / DRIVE_SPEED)); // Adjust time based on speed
         setMotorPower(0); // Stop all motors
