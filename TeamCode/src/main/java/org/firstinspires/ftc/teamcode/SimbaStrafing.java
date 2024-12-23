@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "StrafingAllWays", group = "Autonomous")
-public class Strafing extends LinearOpMode {
+@Autonomous(name = "Simba'sStrafingAllWays", group = "Autonomous")
+public class SimbaStrafing extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
