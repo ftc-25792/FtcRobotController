@@ -7,10 +7,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
-@Autonomous(name = "RightRear", group = "Autonomous")
-public class RightRear extends LinearOpMode {
+@Autonomous(name = "LeftRear", group = "Autonomous")
+public class LeftRear extends LinearOpMode {
 
-    private DcMotor RightRear; // Only one motor is needed
+    private DcMotor leftRearMotor; // Only one motor is needed
     private IMU imu;
 
     private static final double FORWARD_DISTANCE = 0.5; // Adjust distance in meters
@@ -19,10 +19,10 @@ public class RightRear extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Initialize motor
-        RightRear = hardwareMap.get(DcMotor.class, "Right_rear");
+        leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
 
         // Set motor direction
-        RightRear.setDirection(DcMotor.Direction.REVERSE);
+        leftRearMotor.setDirection(DcMotor.Direction.REVERSE);
 
         // Initialize the IMU
         imu = hardwareMap.get(IMU.class, "imu");
@@ -45,6 +45,6 @@ public class RightRear extends LinearOpMode {
     }
 
     private void setMotorPower(double power) {
-        RightRear.setPower(power);
+        leftRearMotor.setPower(power);
     }
 }

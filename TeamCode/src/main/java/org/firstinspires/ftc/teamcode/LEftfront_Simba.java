@@ -1,13 +1,14 @@
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
 @Autonomous(name = "Left Front", group = "Autonomous")
-public class LeftFront extends LinearOpMode {
+public class LEftfront extends LinearOpMode {
 
     private DcMotor leftFront; // Only one motor is needed
     private IMU imu;
@@ -21,7 +22,7 @@ public class LeftFront extends LinearOpMode {
         leftFront = hardwareMap.get(DcMotor.class, "Left_front");
 
         // Set motor direction
-        leftFront.setDirection(DcMotor.Direction.FORWARD);
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
 
         // Initialize the IMU
         imu = hardwareMap.get(IMU.class, "imu");
