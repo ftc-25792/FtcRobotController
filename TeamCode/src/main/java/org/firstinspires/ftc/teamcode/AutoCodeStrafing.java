@@ -22,10 +22,11 @@ public class AutoCodeStrafing  extends LinearOpMode {
     Servo wrist;
 
     private static final double FORWARD_DISTANCE = 0.5; // Adjust distance in meters
-    private static final double TURN_ANGLE = 90.0; // Degrees to turn
-    private static final double DRIVE_SPEED = 0.5; // Speed for driving
-    final double WRIST_FOLDED_IN   = 0.8333;
-    final double WRIST_FOLDED_OUT  = 0.5;
+
+    private static final double DRIVE_SPEED = 0.6 ;
+    private static final double OFFSET_SPEED = 0.2;
+    // Speed for driving
+
     @Override
     public void runOpMode() {
         // Initialize motors
@@ -33,31 +34,28 @@ public class AutoCodeStrafing  extends LinearOpMode {
         rightFrontMotor = hardwareMap.get(DcMotor.class, "Right_front");
         leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
         rightRearMotor = hardwareMap.get(DcMotor.class, "Right_rear");
-        intake = hardwareMap.get(CRServo.class, "Intake");
-        wrist = hardwareMap.get(Servo.class, "Wrist");
 
         // Set motor directions
-        rightRearMotor.setDirection(DcMotor.Direction.REVERSE);
+        rightRearMotor.setDirection(DcMotor.Direction.FORWARD);
         rightFrontMotor.setDirection(DcMotor.Direction.FORWARD);
-        leftRearMotor.setDirection(DcMotor.Direction.FORWARD);
-        leftFrontMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftRearMotor.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontMotor.setDirection(DcMotor.Direction.REVERSE);
 
         // Initialize the IMU
         waitForStart();
-
         driveStraight(0.05, true);
-        strafing(0.7,true);
+        strafing(1.2,true);
 
-        driveStraight(1, true);
-        strafing(0.05,true);
+        driveStraight(0.7, true);
+        strafing(0.10,true);
         driveStraight(1.2,false);
 
-        driveStraight(1.2, true);
-        strafing(0.05,true);
+        driveStraight(0.8, true);
+        strafing(0.10,true);
         driveStraight(1.2,false);
 
-        driveStraight(1.2, true);
-        strafing(0.05,true);
+        driveStraight(0.8, true);
+        strafing(0.10,true);
         driveStraight(1.2,false);
 
 
@@ -67,7 +65,7 @@ public class AutoCodeStrafing  extends LinearOpMode {
         if(isForward){
             setMotorPower(DRIVE_SPEED);
         }else {
-            setMotorPower(-DRIVE_SPEED);
+            setMotorPower(-DRIVE_SPEED + OFFSET_SPEED);
         }
 
         if(DRIVE_SPEED > 0 && distance > 0.0) {
@@ -81,10 +79,10 @@ public class AutoCodeStrafing  extends LinearOpMode {
 
     private void strafing(double distance, boolean isleft ){
         if (isleft == true) {
-            rightFrontMotor.setPower(DRIVE_SPEED);
-            rightRearMotor.setPower(-DRIVE_SPEED);
-            leftFrontMotor.setPower(-DRIVE_SPEED);
-            leftRearMotor.setPower(DRIVE_SPEED);
+            rightFrontMotor.setPower(DRIVE_SPEED-OFFSET_SPEED);
+            rightRearMotor.setPower(-DRIVE_SPEED+OFFSET_SPEED);
+            leftFrontMotor.setPower(-DRIVE_SPEED+OFFSET_SPEED);
+            leftRearMotor.setPower(DRIVE_SPEED-OFFSET_SPEED);
 
         }else{
             rightFrontMotor.setPower(-DRIVE_SPEED);
