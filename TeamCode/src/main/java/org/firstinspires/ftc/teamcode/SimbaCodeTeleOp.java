@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -6,11 +7,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
 @TeleOp(name = "SimbaTeleOp", group = "TeleOp")
-public class SimbaTeleOp extends LinearOpMode {
+public class SimbaCodeTeleOp extends LinearOpMode {
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
     private DcMotor rightFrontMotor;
@@ -45,6 +43,7 @@ public class SimbaTeleOp extends LinearOpMode {
         linear = hardwareMap.get(Servo.class, "linear");
         rightClaw = hardwareMap.get(Servo.class, "rightClaw");
         leftClaw = hardwareMap.get(Servo.class, "leftClaw");
+
         // Set motor directions
         rightRearMotor.setDirection(DcMotor.Direction.FORWARD);
         rightFrontMotor.setDirection(DcMotor.Direction.FORWARD);
@@ -53,21 +52,24 @@ public class SimbaTeleOp extends LinearOpMode {
         leftVertMotor.setDirection(DcMotor.Direction.FORWARD);
         rightVertMotor.setDirection(DcMotor.Direction.FORWARD);
 
-//         Initialize the IMU
+         //         Initialize the IMU
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.FORWARD;
         RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.UP; //BACK
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
+
         waitForStart();
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;
+
         // Calculate wheel powers, incorporating strafing
         double frontLeftPower = leftStickY + leftStickX - rightStickX;
         double frontRightPower = leftStickY - leftStickX + rightStickX;
         double backLeftPower = leftStickY + rightStickX + leftStickX;
         double backRightPower = leftStickY - rightStickX - leftStickX;
+
         // Set motor powers
         leftFrontMotor.setPower(frontLeftPower);
         rightFrontMotor.setPower(frontRightPower);
