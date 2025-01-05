@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="SimbaTeleOpMithil", group="TeleOp")
-public class SimbaTeleOpMithil extends OpMode {
+public class SimbaTeleOpMithil extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
@@ -13,7 +13,7 @@ public class SimbaTeleOpMithil extends OpMode {
     private DcMotor rightRearMotor;
     private DcMotor leftVertMotor;
     private DcMotor rightVertMotor;
-    private Servo linear;
+    private Servo linearServo;
     private Servo rightClaw;
     private Servo leftClaw;
 
@@ -28,7 +28,7 @@ public class SimbaTeleOpMithil extends OpMode {
         leftVertMotor = hardwareMap.get(DcMotor.class, "Left_vert");
         rightVertMotor = hardwareMap.get(DcMotor.class, "Right_vert");
 
-        linear = hardwareMap.get(Servo.class, "linear");
+        linearServo = hardwareMap.get(Servo.class, "linearServo");
         rightClaw = hardwareMap.get(Servo.class, "rightClaw");
         leftClaw = hardwareMap.get(Servo.class, "leftClaw");
     }
@@ -65,10 +65,10 @@ public class SimbaTeleOpMithil extends OpMode {
         // Claw control - synced servos
         if (gamepad2.x) {
             leftClaw.setPosition(1.0); // Close claw
-            rightClaw.setPosition(1.0);
+            rightClaw.setPosition(-1.0);
         } else if (gamepad2.y) {
-            leftClaw.setPosition(0.0); // Open claw
-            rightClaw.setPosition(0.0);
+            leftClaw.setPosition(-0.5); // Open claw
+            rightClaw.setPosition(0.5);
         }
     }
 }
