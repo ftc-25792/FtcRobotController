@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 
 @Autonomous(name = "SimbaRightFront", group = "Autonomous")
-public class Simba_Rightfront extends LinearOpMode {
+    public class Simba_Rightfront extends LinearOpMode {
 
     private DcMotor RightFront; // Only one motor is needed
     private IMU imu;
