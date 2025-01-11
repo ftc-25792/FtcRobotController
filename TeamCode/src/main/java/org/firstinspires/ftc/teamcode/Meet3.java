@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name="Meet3Copy", group="Linear Opmode")
+@TeleOp(name="Meet3 1/9/25", group="Linear Opmode")
 public class Meet3 extends LinearOpMode {
     // Declare motors
     DcMotor motorFrontLeft;
@@ -30,7 +30,7 @@ public class Meet3 extends LinearOpMode {
     final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;//250
     final double ARM_SCORE_SAMPLE_IN_LOW = 30 * ARM_TICKS_PER_DEGREE; //160
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
-    final double ARM_SCORE_IN_HIGH = 90 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_IN_HIGH = 93 * ARM_TICKS_PER_DEGREE;
     final double ARM_HANGING = -15 * ARM_TICKS_PER_DEGREE;
 
     //Viper Slide Control Variables
@@ -39,7 +39,7 @@ public class Meet3 extends LinearOpMode {
     //final double Maxposition = 1800 * VIPERSLIDE_TICKS_PER_DEGREE;
     //final int VIPER_HIGH_BASKET = (int) (26 * VIPERSLIDE_TICKS_PER_DEGREE);
     int RETRACT = 0;
-    int VIPER_42 = -2000;
+    int VIPER_42 = -2100;
     int VIPER_HIGH_BASKET = -3000;
     double vipermotorpower = 1;
     //double moveslide = 0;
@@ -63,7 +63,7 @@ public class Meet3 extends LinearOpMode {
     final double ARM_WINCH_ROBOT = 0 * ARM_TICKS_PER_DEGREE;//15  //8
     final double INTAKE_COLLECT = 1;
     final double INTAKE_OFF = 0;
-    final double INTAKE_DEPOSIT = -0.5;
+    final double INTAKE_DEPOSIT = -1;
     int extentionLimit = 0;
 
     @Override
@@ -152,7 +152,7 @@ public class Meet3 extends LinearOpMode {
             } else if (gamepad1.dpad_right) {
                 wrist.setPosition(0.3);
             } else if (gamepad1.dpad_up) {
-                wrist.setPosition(0.6);
+                wrist.setPosition(0.55);
             } else if (gamepad1.y) {
                 wrist.setPosition(1);
             }
@@ -166,7 +166,6 @@ public class Meet3 extends LinearOpMode {
             if (gamepad2.right_bumper) {
                 /* This is the intaking/collecting arm position */
                 armPosition = ARM_COLLECT;
-
                 //viperPosition = VIPER_COLLECT;
                 //wrist.setPosition(0.5);
                 //viperMotor.setPower(0.2); // Extend Viper slide
@@ -180,9 +179,7 @@ public class Meet3 extends LinearOpMode {
                 //extentionLimit = 0;
                 moveslide(RETRACT);
                 //armPosition = ARM_CLEAR_BARRIER;
-            } else if (gamepad2.left_stick_button) {
-                //viperMotor.setPower(0);
-                moveslide(VIPER_HIGH_BASKET);
+
             } else if (gamepad2.y) {
                 /* This is the correct height to score the sample in the LOW BASKET */
                 //armPosition = ARM_SCORE_SAMPLE_IN_LOW;
@@ -252,11 +249,10 @@ public class Meet3 extends LinearOpMode {
             else if (armPosition == ARM_SCORE_IN_HIGH) {
                 ((DcMotorEx) armMotor).setPower(0.3);
             }
-            else if (armPosition==ARM_COLLECT){
-                ((DcMotorEx) armMotor).setPower(0.3);
-            }
             else {
-                ((DcMotorEx) armMotor).setPower(0.4);
+                //((DcMotorEx) armMotor).setPower(0.1);
+                ((DcMotorEx) armMotor).setVelocity(1200);
+
             }
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             /* TECH TIP: Encoders, integers, and doubles

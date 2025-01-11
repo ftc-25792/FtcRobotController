@@ -13,8 +13,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "KammanderAuto", group = "Autonomous")
-public class KammanderAuto extends LinearOpMode {
+@Autonomous(name = "KammanderAuto 1/10/25", group = "Autonomous")
+public class KammanderAutoImproved extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
@@ -27,8 +27,8 @@ public class KammanderAuto extends LinearOpMode {
     // Define constants
 
     double armPosition = 0;
-    static final double DRIVE_SPEED = 0.4;
-    static final double TURN_SPEED = 0.3;
+    static final double DRIVE_SPEED = 0.5;
+    static final double TURN_SPEED = 0.4;
     static final double HEADING_THRESHOLD = 1.0;
     final double ARM_TICKS_PER_DEGREE = 7125.16 / 360;
     final double hover = 10 * ARM_TICKS_PER_DEGREE;
@@ -77,32 +77,36 @@ public class KammanderAuto extends LinearOpMode {
 
         waitForStart();
 
-          armControls(hover,0.5);
-          sleep(500);
-          wrist.setPosition(0.55);
-          strafing(0.3, false);
-          armControls(ARM_SCORE_IN_HIGH,0.3);
-          sleep(2000);
-          wrist.setPosition(0.55);
-          driveStraight(0.5, true);
-          turn(45,true);
-          driveStraight(0.04,false);
-          sleep(500);
-          moveslide(VIPER_HIGH_BASKET);
-          sleep(1000);
-          wrist.setPosition(0.55);
-          sleep(1000);
-          intake.setPower(INTAKE_ON);
-          sleep(2000);
-          intake.setPower(INTAKE_OFF);
-          sleep(200);
-          moveslide(0);
-          sleep(2000);
-          armControls(hover,0.3);
-          sleep(500);
-          turn(300,true);
-          driveStraight(2,false);
-          strafing(0.23,true);
+        armControls(hover,0.5);
+        sleep(500);
+        wrist.setPosition(0.55);
+        strafing(0.3, false);
+        armControls(ARM_SCORE_IN_HIGH,0.3);
+        sleep(2000);
+        wrist.setPosition(0.55);
+        driveStraight(0.5, true);
+        turn(45,true);
+        driveStraight(0.06,false);
+        sleep(250);
+        moveslide(VIPER_HIGH_BASKET);
+        sleep(1000);
+        wrist.setPosition(0.55);
+        sleep(1000);
+        intake.setPower(INTAKE_ON);
+        sleep(1700);
+        moveslide(0);
+        sleep(1800);
+        armControls(hover,0.3);
+        sleep(250);
+        turn(296,true);
+        driveStraight(0.15 ,false);
+        strafing(0.83,false);
+        driveStraight(0.13,true);
+        strafing(0.8,true);
+        UpDiagonalStraf(0.45,true);
+        DownDiagonalStraf(0.45,false);
+        driveBackward(0.77);
+        strafing(0.5,true);
 
     }
     void moveslide(int viperposition) {
@@ -112,7 +116,28 @@ public class KammanderAuto extends LinearOpMode {
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         viperMotor.setPower(0.65);
     }
+    private void driveBackward(double distance) {
+//        // Start moving forward or backward based on direction
+//        double initialHeading = getHeading();
 
+
+
+            setMotorPower(-0.8);
+
+
+        // Calculate the distance (in meters)
+        sleep((long) (distance * 1000 / DRIVE_SPEED)); // Adjust time based on speed
+        setMotorPower(0); // Stop all motors
+
+        // loop to maintain heading while driving
+//        while (opModeIsActive() && (System.currentTimeMillis() < endTime)) {
+//            double correction = getSteeringCorrection(initialHeading, 0.03);
+//            setMotorPower(DRIVE_SPEED - correction);
+//        }
+
+        setMotorPower(0);
+        sleep(500);
+    }
 
     private void UpDiagonalStraf(double distance, boolean IsUpperLeft){
         if (IsUpperLeft == true) {
@@ -154,7 +179,7 @@ public class KammanderAuto extends LinearOpMode {
 
         armMotor.setTargetPosition((int) (armPosition));
         ((DcMotorEx) armMotor).setPower(speed);
-       armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
     }
     private void driveStraight(double distance, boolean isForward) {
