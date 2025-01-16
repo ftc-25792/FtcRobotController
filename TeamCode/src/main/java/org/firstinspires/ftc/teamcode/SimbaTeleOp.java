@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name="SimbaTeleOp1/8.2", group="TeleOp")
-public class SimbaCodeTeleOp extends LinearOpMode {
+public class SimbaTeleOp extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
@@ -17,7 +17,6 @@ public class SimbaCodeTeleOp extends LinearOpMode {
     private DcMotor rightVertMotor;
     private Servo linearServo;
     private Servo rightClaw;
-    private Servo leftClaw;
     final double viperPower = 1.0;
     @Override
     public void runOpMode() {
@@ -32,7 +31,6 @@ public class SimbaCodeTeleOp extends LinearOpMode {
 
         linearServo = hardwareMap.get(Servo.class, "linearServo");
         rightClaw = hardwareMap.get(Servo.class, "rightClaw");
-        leftClaw = hardwareMap.get(Servo.class, "leftClaw");
         rightVertMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         rightRearMotor.setDirection(DcMotor.Direction.FORWARD);
         rightFrontMotor.setDirection(DcMotor.Direction.FORWARD);
@@ -72,6 +70,10 @@ public class SimbaCodeTeleOp extends LinearOpMode {
                 leftVertMotor.setPower(-viperPower);
                 rightVertMotor.setPower(-viperPower);
             }
+            else if (gamepad1.right_stick_button){
+                leftVertMotor.setPower(0);
+                rightVertMotor.setPower(0);
+            }
 
             // Linear servo control
             if (gamepad1.a) {
@@ -82,12 +84,17 @@ public class SimbaCodeTeleOp extends LinearOpMode {
 
             // Claw control - synced servos
             if (gamepad1.x) {
-                leftClaw.setPosition(1.0); // Close claw
                 rightClaw.setPosition(-1.0);
-            } else if (gamepad1.y) {
-                leftClaw.setPosition(-0.5); // Open claw
+                updateTelemetry("Claw Postion:",rightClaw.getPosition());
+              } else if (gamepad1.y) {
                 rightClaw.setPosition(0.5);
+                updateTelemetry("Claw Postion:",rightClaw.getPosition());
             }
         }
+    }
+    public void updateTelemetry(String caption, double data)
+    {
+        telemetry.addData(caption, data);
+        telemetry.update();
     }
 }

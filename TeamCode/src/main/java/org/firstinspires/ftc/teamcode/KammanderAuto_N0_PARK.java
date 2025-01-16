@@ -4,6 +4,12 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -13,8 +19,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "KammanderAuto 1/10/25", group = "Autonomous")
-public class KammanderAutoImproved extends LinearOpMode {
+@Autonomous(name = "KammanderAuto NO PARK", group = "Autonomous")
+public class KammanderAuto_N0_PARK extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
@@ -108,11 +114,9 @@ public class KammanderAutoImproved extends LinearOpMode {
         strafing(0.85,true);
         UpDiagonalStraf(0.45,true);
         DownDiagonalStraf(0.45,false);
-        strafing(0.9,false);
-        driveStraight(0.25,true);
-        strafing(0.9,true);
-        UpDiagonalStraf(0.5,true);
-
+        driveStraight(0.2,false);
+        strafing(0.2, true);
+        driveStraight(0.4, true);
 
 //        driveBackward(0.77);
 //        strafing(0.5,true);
@@ -131,7 +135,7 @@ public class KammanderAutoImproved extends LinearOpMode {
 
 
 
-            setMotorPower(-0.69-21);
+        setMotorPower(-0.69-21);
 
 
         // Calculate the distance (in meters)

@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name="Meet3 1/9/25", group="Linear Opmode")
+@TeleOp(name="Meet3 1-11/25", group="Linear Opmode")
 public class Meet3 extends LinearOpMode {
     // Declare motors
     DcMotor motorFrontLeft;
@@ -30,7 +30,7 @@ public class Meet3 extends LinearOpMode {
     final double ARM_COLLECT = 10 * ARM_TICKS_PER_DEGREE;//250
     final double ARM_SCORE_SAMPLE_IN_LOW = 30 * ARM_TICKS_PER_DEGREE; //160
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE; // Allow for slight adjustments
-    final double ARM_SCORE_IN_HIGH = 93 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_IN_HIGH = 92 * ARM_TICKS_PER_DEGREE;
     final double ARM_HANGING = -15 * ARM_TICKS_PER_DEGREE;
 
     //Viper Slide Control Variables
@@ -39,7 +39,7 @@ public class Meet3 extends LinearOpMode {
     //final double Maxposition = 1800 * VIPERSLIDE_TICKS_PER_DEGREE;
     //final int VIPER_HIGH_BASKET = (int) (26 * VIPERSLIDE_TICKS_PER_DEGREE);
     int RETRACT = 0;
-    int VIPER_42 = -2100;
+    int viper_42 = -1700; //-2100
     int VIPER_HIGH_BASKET = -3000;
     double vipermotorpower = 1;
     //double moveslide = 0;
@@ -198,33 +198,35 @@ public class Meet3 extends LinearOpMode {
                 }
 
             } if (gamepad2.b) {
-                moveslide(VIPER_42);
-                //  double curtime = getRuntime();
-                ///  while(true) {
-                //   if (getRuntime() > curtime+2)
-                //     break;
-                //  viperMotor.setPower(-0.5);
-                //}
+                if (armPosition == ARM_SCORE_IN_HIGH){
+                    viper_42 = -2050;
+                    moveslide(viper_42);
+
+                } else if (armPosition== ARM_COLLECT) {
+                    viper_42 = -1750;
+                    moveslide(viper_42);
+                }else {
+                    viper_42 = -1750;
+                    moveslide(viper_42);
+                }
+
+
             } else if (gamepad2.dpad_down) {
                     /* This turns off the intake, folds in the wrist, and moves the arm
                     back to folded inside the robot. This is also the starting configuration */
                 armPosition = ARM_WINCH_ROBOT;
-                // intake.setPower(INTAKE_OFF);
-                //wrist.setPosition(WRIST_FOLDED_IN);
+
             } else if (gamepad2.dpad_right) {
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armPosition = ARM_SCORE_IN_HIGH;
-                //wrist.setPosition(WRIST_FOLDED_OUT);
+
             } else if (gamepad2.dpad_up) {
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
                 armPosition = ARM_ATTACH_HANGING_HOOK;
-                // intake.setPower(INTAKE_OFF);
-                //wrist.setPosition(WRIST_FOLDED_IN);
+
             } else if (gamepad2.dpad_left) {
                 /* this moves the arm down to lift the robot up once it has been hooked */
                 armPosition = ARM_WINCH_ROBOT;
-                // intake.setPower(INTAKE_OFF);
-                //wrist.setPosition(WRIST_FOLDED_IN);
 
             }
             else if (gamepad2.right_stick_button) {
