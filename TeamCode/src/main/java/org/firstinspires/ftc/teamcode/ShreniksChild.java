@@ -6,8 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name="SimbaTeleOp1/8.3", group="TeleOp")
-public class SimbaTeleOp extends LinearOpMode {
+@TeleOp(name="ShreniksChild", group="TeleOp")
+public class ShreniksChild extends LinearOpMode {
 
     private DcMotor leftFrontMotor;
     private DcMotor leftRearMotor;
@@ -18,6 +18,9 @@ public class SimbaTeleOp extends LinearOpMode {
     private Servo linearServo;
     private Servo rightClaw;
     final double viperPower = 1.0;
+
+    int buttonPressed=0;
+
     @Override
     public void runOpMode() {
         // Initialize motors
@@ -59,43 +62,53 @@ public class SimbaTeleOp extends LinearOpMode {
             rightFrontMotor.setPower(rightFrontPower);
             leftRearMotor.setPower(leftBackPower);
             rightRearMotor.setPower(rightBackPower);
+
+
+
             if (gamepad1.right_bumper) {
-                leftVertMotor.setPower(viperPower);
-                rightVertMotor.setPower(viperPower);
-            }
-            else if(gamepad1.dpad_down){
-                leftVertMotor.setPower(0);
-                rightVertMotor.setPower(0);
-            }
-            else if (gamepad1.left_bumper) {
-                leftVertMotor.setPower(-viperPower);
-                rightVertMotor.setPower(-viperPower);
-            }
-            else if (gamepad1.right_stick_button){
-                leftVertMotor.setPower(0);
-                rightVertMotor.setPower(0);
-            }
+                if (buttonPressed < 4) {
+                    leftVertMotor.setPower(viperPower);
+                    rightVertMotor.setPower(viperPower);
+                    sleep(1300);
+                    leftVertMotor.setPower(0);
+                    rightVertMotor.setPower(0);
+                    buttonPressed++;
+                    updateTelemetry("buttonPressed count:",buttonPressed);
+                }
+            } else if (gamepad1.left_bumper) {
+                if (buttonPressed > 0) {
+                    leftVertMotor.setPower(-viperPower);
+                    rightVertMotor.setPower(-viperPower);
+                    sleep(buttonPressed * 1300);
+                    leftVertMotor.setPower(0);
+                    rightVertMotor.setPower(0);
+                    buttonPressed=0;
+                    updateTelemetry("buttonPressed count:",buttonPressed);
+                }
 
-            // Linear servo control
-            if (gamepad1.a) {
-                linearServo.setPosition(1.0); // Fully extended
-            } else if (gamepad1.b) {
-                linearServo.setPosition(0.0); // Fully retracted
-            }
 
-            // Claw control - synced servos
-            if (gamepad1.x) {
-                rightClaw.setPosition(-1.0);
-                updateTelemetry("Claw Postion:",rightClaw.getPosition());
-              } else if (gamepad1.y) {
-                rightClaw.setPosition(0.5);
-                updateTelemetry("Claw Postion:",rightClaw.getPosition());
+                // Linear servo control
+                if (gamepad1.a) {
+                    linearServo.setPosition(1.0); // Fully extended
+                } else if (gamepad1.b) {
+                    linearServo.setPosition(0.0); // Fully retracted
+                }
+
+                // Claw control - synced servos
+                if (gamepad1.x) {
+                    rightClaw.setPosition(-1.0);
+                    updateTelemetry("Claw Postion:", rightClaw.getPosition());
+                } else if (gamepad1.y) {
+                    rightClaw.setPosition(0.5);
+                    updateTelemetry("Claw Postion:", rightClaw.getPosition());
+                }
             }
         }
+
     }
-    public void updateTelemetry(String caption, double data)
+    public void updateTelemetry(String caption,double data)
     {
         telemetry.addData(caption, data);
         telemetry.update();
     }
-}
+    }
