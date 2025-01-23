@@ -1,0 +1,86 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
+@TeleOp(name="ArmCheck", group="Linear Opmode")
+public class ArmCheck extends LinearOpMode {
+    // Declare motors
+
+    DcMotor armMotor;
+
+    int armGround = 0;
+
+    int armCollect = 200;
+
+    int armHoriz = 600;
+
+    int armHigh = 1000;
+
+    double armmotorpower = 0.3;
+
+
+    double armPosition = 0;
+
+    @Override
+    public void runOpMode() {
+
+        armMotor = hardwareMap.get(DcMotor.class, "armMotor");
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setTargetPosition(0);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        ((DcMotorEx) armMotor).setCurrentAlert(3, CurrentUnit.AMPS);
+
+        // Set arm motor to use encoders
+      //  armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Wait for the game driver to press play
+        waitForStart();
+        while (opModeIsActive()) {
+
+            if (gamepad2.right_bumper) {
+
+                moveArm(armCollect);
+
+            } else if (gamepad2.dpad_down) {
+
+                moveArm(armGround);
+
+            } else if (gamepad2.dpad_right) {
+
+                moveArm(armHigh);
+
+            } else if (gamepad2.y) {
+
+               moveArm(armHoriz);
+
+            }
+
+           telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+
+            telemetry.update();
+        }
+    }
+
+    void moveArm(int armposition) {
+
+        telemetry.addData("Arm Value", armposition);
+        telemetry.update();
+
+        armMotor.setTargetPosition(armposition);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(0.3);
+
+    }
+}
