@@ -92,30 +92,39 @@ public class KammanderAutoImproved extends LinearOpMode {
         sleep(1000);
         wrist.setPosition(0.55);
 
-        sleep(1000);
+        sleep(100);
         intake.setPower(INTAKE_ON);
         sleep(100);
         driveStraight(0.02,false);
-        sleep(1500);
+        sleep(100);
         moveslide(0);
-        sleep(1800);
+        sleep(1200);
         armControls(hover,0.3);
         sleep(250);
         turn(296,true);
         driveStraight(0.12 ,false);
-        strafing(0.83,false);
-        driveStraight(0.11,true);
+        strafing(0.2,false);
+        driveStraight(0.05,true);
+        intake.setPower(1);
+        sleep(500);
+        intake.setPower(0);
         strafing(0.85,true);
-        UpDiagonalStraf(0.45,true);
-        DownDiagonalStraf(0.45,false);
-        strafing(0.9,false);
-        driveStraight(0.25,true);
-        strafing(0.9,true);
-        UpDiagonalStraf(0.5,true);
+        turn(45,true);
 
+        driveStraight(0.03,false);
+        sleep(100);
+        moveslide(VIPER_HIGH_BASKET);
+        sleep(1000);
+        wrist.setPosition(0.55);
 
-//        driveBackward(0.77);
-//        strafing(0.5,true);
+        sleep(100);
+        intake.setPower(INTAKE_ON);
+        sleep(100);
+        driveStraight(0.02,false);
+        sleep(200);
+        moveslide(0);
+        sleep(1000);
+        armControls(hover,0.3);
 
     }
     void moveslide(int viperposition) {
