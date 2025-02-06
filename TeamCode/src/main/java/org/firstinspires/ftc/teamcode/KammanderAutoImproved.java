@@ -32,14 +32,14 @@ public class KammanderAutoImproved extends LinearOpMode {
     static final double HEADING_THRESHOLD = 1.0;
     final double ARM_TICKS_PER_DEGREE = 7125.16 / 360;
     final double hover = 10 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_IN_HIGH = 85 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_IN_HIGH = 90  * ARM_TICKS_PER_DEGREE;
     final double hover2 = 15 + ARM_TICKS_PER_DEGREE;
     private CRServo intake;
     private Servo wrist;
     final double INTAKE_OFF = 0;
     final double INTAKE_ON = 0.69;
     int VIPER_HIGH_BASKET = -3000;
-
+    int PickUp = -700;
     @Override
     public void runOpMode() {
         // Initialize motors
@@ -78,53 +78,63 @@ public class KammanderAutoImproved extends LinearOpMode {
         waitForStart();
 
         armControls(hover,0.5);
-        sleep(500);
+        sleep(200);
         wrist.setPosition(0.55);
         strafing(0.3, false);
         armControls(ARM_SCORE_IN_HIGH,0.3);
         sleep(2000);
         wrist.setPosition(0.55);
-        driveStraight(0.5, true);
+       driveStraight(0.5, true);
         turn(42,true);
-        driveStraight(0.03,false);
-        sleep(250);
-        moveslide(VIPER_HIGH_BASKET);
-        sleep(1000);
-        wrist.setPosition(0.55);
 
+        driveStraight(0.04,true);
+        moveslide(VIPER_HIGH_BASKET);
+        sleep(1900);
+        wrist.setPosition(0.55);
         sleep(100);
         intake.setPower(INTAKE_ON);
-        sleep(100);
-        driveStraight(0.02,false);
+        sleep(500);
+        driveStraight(0.06,false);
         sleep(100);
         moveslide(0);
-        sleep(1200);
+        sleep(1800);
         armControls(hover,0.3);
         sleep(250);
-        turn(296,true);
-        driveStraight(0.12 ,false);
-        strafing(0.2,false);
-        driveStraight(0.05,true);
-        intake.setPower(1);
-        sleep(500);
-        intake.setPower(0);
-        strafing(0.85,true);
-        turn(45,true);
+        turn(-45,false);
+        driveStraight(0.11 ,false);
+        strafing(0.44,false);
+        moveslide(PickUp);
 
-        driveStraight(0.03,false);
+        sleep(250);
+        intake.setPower(-1);
+        sleep(1000);
+        intake.setPower(0);
+        moveslide(0);
+        strafing(0.54,true);
+        driveStraight(  0.2 ,true);
+
+        turn(39,true);
+
+        armControls(ARM_SCORE_IN_HIGH,0.3);
+        sleep(2000);
+        driveStraight(0.03,true);
+
+
+        moveslide(0);
         sleep(100);
         moveslide(VIPER_HIGH_BASKET);
-        sleep(1000);
+        sleep(1900);
         wrist.setPosition(0.55);
 
         sleep(100);
         intake.setPower(INTAKE_ON);
-        sleep(100);
-        driveStraight(0.02,false);
+        sleep(400);
+        driveStraight(0.04,false);
         sleep(200);
         moveslide(0);
-        sleep(1000);
+        sleep(1800);
         armControls(hover,0.3);
+        sleep(700);
 
     }
     void moveslide(int viperposition) {
@@ -225,6 +235,7 @@ public class KammanderAutoImproved extends LinearOpMode {
     }
 
     private void turn(double angle, boolean isLeft) {
+        imu.resetYaw();
         double startAngle = getHeading();
         double targetAngle = startAngle + angle;
 
