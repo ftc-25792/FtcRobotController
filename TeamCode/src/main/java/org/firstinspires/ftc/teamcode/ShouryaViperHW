@@ -1,0 +1,39 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@TeleOp(name = "ViperHW", group = "TeleOp")
+public class ShouryaViperHW extends LinearOpMode {
+
+    DcMotor monkey2;
+
+            @Override
+    public void runOpMode() {
+
+        monkey2 = hardwareMap.get(DcMotor.class, "monkey2");
+
+                waitForStart();
+
+                // Move Viper Forward
+                monkey2.setPower(0.5);
+                sleep(2000);
+
+                // Pause Viper Movement For A Second
+                monkey2.setPower(0);
+                sleep(1000);
+
+                // Move Viper Back
+                monkey2.setPower(-0.5);
+                sleep(2000);
+
+                // End Viper Slide Movement
+                monkey2.setPower(0);
+                sleep(2000);
+
+                // Add Status To Driver Hub
+                telemetry.addData("Viper Slide Status", "Viper Movement Finished");
+                telemetry.update();
+            }
+}
