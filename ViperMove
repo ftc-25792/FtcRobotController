@@ -1,0 +1,42 @@
+/* Copyright (c) 2017 FIRST. All rights reserved.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that
+ * the following conditions are met:
+ * ...
+ * (Include the entire license text here, from the first class)
+ * ...
+ */
+package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+
+@TeleOp(name="ViperMove", group = "Auto")
+public class ViperMov extends LinearOpMode {
+    // Declare motors
+    DcMotor viper;
+
+    @Override
+    public void runOpMode() {
+        viper = hardwareMap.get(DcMotor.class, "viperMotor");
+
+        waitForStart();
+
+        viper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        viper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viper.setTargetPosition(0);
+        viper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        viper.setTargetPosition(1000);
+        viper.setPower(1);
+        sleep(5000);
+        viper.setTargetPosition(0);
+        viper.setPower(-1);
+        sleep(5000);
+        viper.setTargetPosition(1000);
+        viper.setPower(1);
+
+        viper.setPower(0);
+    }
+}
