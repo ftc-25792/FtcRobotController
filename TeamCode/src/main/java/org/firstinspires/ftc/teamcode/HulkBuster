@@ -1,0 +1,64 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@TeleOp(name = "HulkBuster", group = "Linear Opmode")
+public class HulkBuster extends LinearOpMode {
+
+    private DcMotor frontLeft;
+    private DcMotor frontRight;
+    private DcMotor backLeft;
+    private DcMotor backRight;
+
+
+    private static final double SPEED_FACTOR = 0.5;
+
+    @Override
+    public void runOpMode() {
+
+        // Initialize hardware
+        frontLeft  = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+        backLeft   = hardwareMap.get(DcMotor.class, "backLeft");
+        backRight  = hardwareMap.get(DcMotor.class, "backRight");
+
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
+
+        waitForStart();
+
+        while (opModeIsActive()) {
+            // Get joystick values and apply speed factor
+            double y = -gamepad1.left_stick_y * SPEED_FACTOR;
+            double x = gamepad1.left_stick_x * SPEED_FACTOR;
+            double rx = gamepad1.right_stick_x * SPEED_FACTOR;
+
+            // Calculate power for each wheel
+            double frontLeftPower  = y + x + rx;
+            double backLeftPower   = y - x + rx;
+            double frontRightPower = y - x - rx;
+            double backRightPower  = y + x - rx;
+
+            // Normalize powers if > 1.0
+            double max = Math.max(1.0, Math.abs(frontLeftPower));
+            max = Math.max(max, Math.abs(backLeftPower));
+            max = Math.max(max, Math.abs(frontRightPower));
+            max = Math.max(max, Math.abs(backRightPower));
+
+            frontLeft.setPower(frontLeftPower / max);
+            backLeft.setPower(backLeftPower / max);
+            frontRight.setPower(frontRightPower / max);
+            backRight.setPower(backRightPower / max);
+
+            telemetry.addData("Front Left Power", frontLeftPower);
+            telemetry.addData("Back Left Power", backLeftPower);
+            telemetry.addData("Front Right Power", frontRightPower);
+            telemetry.addData("Back Right Power", backRightPower);
+            telemetry.update();
+
+            telemetry.addData("Busting the Hulk", 100);
+        }
+    }
+}
