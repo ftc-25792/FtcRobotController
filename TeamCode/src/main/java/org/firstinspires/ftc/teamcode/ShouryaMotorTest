@@ -1,0 +1,25 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@TeleOp(name = "Motor Example", group = "Examples")
+public class MotorTest extends LinearOpMode {
+
+    DcMotor my_Frontmotor;
+
+    @Override
+    public void runOpMode() {
+        my_Frontmotor = hardwareMap.get(DcMotor.class, "frontMotor");
+        waitForStart();
+        while (opModeIsActive()) {
+            if (gamepad1.dpad_left) {
+                my_Frontmotor.setPower(0.5);
+            } else if (gamepad1.dpad_right) {
+                my_Frontmotor.setPower(-0.5);
+            }
+        my_Frontmotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+    }
+}
