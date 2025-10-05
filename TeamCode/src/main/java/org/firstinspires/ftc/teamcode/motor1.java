@@ -6,11 +6,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @Autonomous(name="BasicJavaLessonTest", group="Autonomous")
-public class BasicJavaLessonTest extends LinearOpMode {
+public class Motor1 extends LinearOpMode {
     private DcMotor leftFrontMotor;
-    private DcMotor leftRearMotor;
-    private DcMotor rightFrontMotor;
-    private DcMotor rightRearMotor;
+
 
     private static final double FORWARD_DISTANCE = 0.5;
     private static final double DRIVE_SPEED = 0.5;
@@ -26,16 +24,9 @@ public class BasicJavaLessonTest extends LinearOpMode {
 
     private void setMotorPower(double power) {
         leftFrontMotor.setPower(power);
-        leftRearMotor.setPower(power);
-        rightFrontMotor.setPower(power);
-        rightRearMotor.setPower(power);
+
         leftFrontMotor = hardwareMap.get(DcMotor.class, "Left_front");
-        rightFrontMotor = hardwareMap.get(DcMotor.class, "Right_front");
-        leftRearMotor = hardwareMap.get(DcMotor.class, "Left_rear");
-        rightRearMotor = hardwareMap.get(DcMotor.class, "Right_rear");
-        rightRearMotor.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontMotor.setDirection(DcMotor.Direction.FORWARD);
-        leftRearMotor.setDirection(DcMotor.Direction.FORWARD);
+
     }
 
     private void driveForward(double distance) {
