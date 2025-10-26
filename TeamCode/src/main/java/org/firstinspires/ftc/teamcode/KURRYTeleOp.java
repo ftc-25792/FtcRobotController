@@ -38,7 +38,7 @@ public class KURRYTeleOP extends LinearOpMode {
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
 
-        launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // --- Intake Setup ---
@@ -88,7 +88,11 @@ public class KURRYTeleOP extends LinearOpMode {
             } else {
                 launcherLeft.setPower(0);
             }
-
+            if (gamepad2.right_bumper){
+                launcherLeft.setPower(-launchPower);
+            } else if(gamepad2.dpad_left){
+                launcherRight.setPower(-launchPower);
+            }
 
 
             if (gamepad2.b) {
