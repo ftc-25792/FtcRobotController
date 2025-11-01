@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "KurryAutoFull", group = "Linear Opmode")
+@Autonomous(name = "KurryAutoFullRed", group = "Linear Opmode")
 public class KurryAuto extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
@@ -60,8 +60,8 @@ public class KurryAuto extends LinearOpMode {
         driveStraight(0.6,false);
         flapper();
         sleep(1500);
-        strafing(0.2,false);
-        
+
+
 //        turn(45,false);
 //        driveStraight(0.5, true);
 //        driveStraight(0.5,false);
@@ -224,11 +224,11 @@ public class KurryAuto extends LinearOpMode {
     }
 
     void flapper() {
-        flapperRight.setPosition(0.22);
+        flapperRight.setPosition(0.33);
         sleep(1000);
-        flapperRight.setPosition(0.42);
+        flapperRight.setPosition(0.67);
         sleep(1000);
-        flapperRight.setPosition(0.22);
+        flapperRight.setPosition(0.33);
         sleep(1000);
         flapperLeft.setPosition(0.02);
         sleep(1000);
