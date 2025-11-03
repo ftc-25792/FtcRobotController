@@ -108,12 +108,12 @@ public class ModifiedKurryMeet1 extends LinearOpMode {
                 launcherRight.setPower(0);
             } */
 
-            if (gamepad2.x) {
+            if (gamepad2.left_trigger > 0.2) {
                 launcherLeft.setPower(leftLauncherPowerMID);
             } else {
                 launcherLeft.setPower(0);
             }
-            if (gamepad2.y) {
+            if (gamepad2.right_trigger > 0.2) {
                 launcherRight.setPower(rightLauncherPowerMID);
             } else {
                 launcherRight.setPower(0);
@@ -127,9 +127,9 @@ public class ModifiedKurryMeet1 extends LinearOpMode {
                     rightLauncherPowerMID = 1.0;
                 }
             }
-            
 
-            if (gamepad2.a) {
+
+            if (gamepad2.x) {
                 rightLauncherPowerMID -= 0.05;
                 telemetry.addData("Right Launcher Power:", "%.2f", rightLauncherPowerMID);
                 telemetry.update();
@@ -138,7 +138,7 @@ public class ModifiedKurryMeet1 extends LinearOpMode {
                 }
             }
 
-            if (gamepad2.right_trigger > 0.2) {
+            if (gamepad2.dpad_right) {
                 leftLauncherPowerMID += 0.05;
                 telemetry.addData("Left Launcher Power:", "%.2f", rightLauncherPowerMID);
                 telemetry.update();
@@ -148,7 +148,7 @@ public class ModifiedKurryMeet1 extends LinearOpMode {
             }
 
 
-            if (gamepad2.left_trigger > 0.2) {
+            if (gamepad2.dpad_left) {
                 leftLauncherPowerMID -= 0.05;
                 telemetry.addData("Left Launcher Power:", "%.2f", rightLauncherPowerMID);
                 telemetry.update();
@@ -196,9 +196,9 @@ public class ModifiedKurryMeet1 extends LinearOpMode {
                     flapperPosition = 0.28;
                 }
 
-                if (gamepad2.dpad_right) {
+                if (gamepad2.y) {
                     flapperRight.setPosition(0.67);
-                } else if (gamepad2.dpad_left) {
+                } else if (gamepad2.a) {
                     flapperRight.setPosition(0.33);
                 }
 
