@@ -33,8 +33,8 @@ public class KurryTeleOpV1 extends LinearOpMode {
     private double leftLauncherPowerMID = 0.80;
     private double rightLauncherPowerMID = 0.80;
 
-    private double flapperPosition = 0.02;
-    private double flapperRightPosition = 1;
+    private double flapperPosition = 0.54;
+    private double flapperRightPosition = 0.3;
 
     private static final double SPEED_FACTOR = 0.7;
 
@@ -47,9 +47,9 @@ public class KurryTeleOpV1 extends LinearOpMode {
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        flapperLeft = hardwareMap.get(Servo.class, "servo1");
-        flapperRight = hardwareMap.get(Servo.class, "servo2");
-        servoWheel = hardwareMap.get(CRServo.class, "servo3");
+        flapperLeft = hardwareMap.get(Servo.class, "fl");
+        flapperRight = hardwareMap.get(Servo.class, "fr");
+        servoWheel = hardwareMap.get(CRServo.class, "sw");
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.REVERSE);
@@ -163,15 +163,15 @@ public class KurryTeleOpV1 extends LinearOpMode {
             // Flapper Servo (Gamepad 2)
             // -------------------------------
             if (gamepad2.dpad_down) {
-                flapperPosition = 0.02;
+                flapperPosition = 0.4;
             } else if (gamepad2.dpad_up) {
-                flapperPosition = 0.28;
+                flapperPosition = 0.54;
             }
 
-            if (gamepad2.dpad_right) {
-                flapperRight.setPosition(0.67);
-            } else if (gamepad2.dpad_left) {
-                flapperRight.setPosition(0.33);
+            if (gamepad1.dpad_right) {
+                flapperRight.setPosition(0.3);
+            } else if (gamepad1.dpad_left) {
+                flapperRight.setPosition(0.7);
             }
 
             if (gamepad2.right_stick_button) {
