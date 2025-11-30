@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-// --- MODERN IMU IMPORTS ---
+//MODERN IMU IMPORTS
 import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -36,8 +36,8 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
     private double leftLauncherPowerMID = 0.80;
     private double rightLauncherPowerMID = 0.80;
 
-    private double flapperPosition = 0.02; // Left Flapper Default
-    private double flapperRightPosition = 1; // Right Flapper Default (Not used in setPosition, kept for consistency)
+    private double flapperPosition = 0.02; 
+    private double flapperRightPosition = 1;
 
     private static final double SPEED_FACTOR = 0.7;
 
@@ -50,11 +50,11 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        flapperLeft = hardwareMap.get(Servo.class, "servo1"); // Assuming servo1/servo2 map to left/right flappers
+        flapperLeft = hardwareMap.get(Servo.class, "servo1"); 
         flapperRight = hardwareMap.get(Servo.class, "servo2");
         servoWheel = hardwareMap.get(CRServo.class, "servo3");
 
-        // --- IMU Configuration (Matching your Autonomous Code) ---
+        // IMU Configuration
         imu = hardwareMap.get(IMU.class, "imu");
 
         // Define Hub Orientation: Logo UP, USB FORWARD
