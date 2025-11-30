@@ -173,12 +173,12 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
                 flapperRight.setPosition(0.33);
             }
 
-            // CRServo Fix (Stop-on-release)
+            
             if (gamepad2.right_stick_button) {
                 servoWheel.setPower(ServoWheelRIGHT);
             } else if (gamepad2.left_stick_button) {
                 servoWheel.setPower(ServoWheelLEFT);
-            } else {
+            } else if (gamepad2.right_bumper) {
                 servoWheel.setPower(ServoWheelSTOP);
             }
 
