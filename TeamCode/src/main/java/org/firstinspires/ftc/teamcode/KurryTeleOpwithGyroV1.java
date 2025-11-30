@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -8,7 +8,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+// --- MODERN IMU IMPORTS ---
+import com.qualcomm.robotcore.hardware.IMU;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @TeleOp(name = "KURRY TeleOp", group = "Linear Opmode")
 public class KurryTeleOpwithGyroV1 extends LinearOpMode {
@@ -18,12 +21,8 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
     private Servo flapperLeft;
     private Servo flapperRight;
     private CRServo servoWheel;
-    private BNO055IMU imu;
-    private boolean isHoldingTriggerR = false;
-    private boolean isHoldingPositionR = false;
-    private boolean isHoldingTriggerL = false;
-    private boolean isHoldingPositionL = false;
-    private int holdPosition = 0;
+    private IMU imu; // Using the modern IMU interface
+
     final double ServoWheelRIGHT = 1;
     final double ServoWheelSTOP = 0;
     final double ServoWheelLEFT = -1;
@@ -37,8 +36,8 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
     private double leftLauncherPowerMID = 0.80;
     private double rightLauncherPowerMID = 0.80;
 
-    private double flapperPosition = 0.02;
-    private double flapperRightPosition = 1;
+    private double flapperPosition = 0.02; // Left Flapper Default
+    private double flapperRightPosition = 1; // Right Flapper Default (Not used in setPosition, kept for consistency)
 
     private static final double SPEED_FACTOR = 0.7;
 
@@ -51,14 +50,24 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        flapperLeft = hardwareMap.get(Servo.class, "servo1");
+        flapperLeft = hardwareMap.get(Servo.class, "servo1"); // Assuming servo1/servo2 map to left/right flappers
         flapperRight = hardwareMap.get(Servo.class, "servo2");
         servoWheel = hardwareMap.get(CRServo.class, "servo3");
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
 
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        // --- IMU Configuration (Matching your Autonomous Code) ---
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        // Define Hub Orientation: Logo UP, USB FORWARD
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+        );
+
+        // Initialize IMU with parameters and reset Yaw (Heading)
+        IMU.Parameters parameters = new IMU.Parameters(orientationOnRobot);
         imu.initialize(parameters);
+        imu.resetYaw();
+        // ----------------------------------------
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.REVERSE);
@@ -66,18 +75,18 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
         backLeft.setDirection(DcMotor.Direction.FORWARD);
         launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        flapperLeft.setDirection(Servo.Direction.REVERSE);
-        flapperRight.setDirection(Servo.Direction.FORWARD);
+        flapperLeft.setDirection(Servo.Direction.REVERSE); // Set direction for left flapper
+        flapperRight.setDirection(Servo.Direction.FORWARD); // Set direction for right flapper
+
+        // Motor Brake Behavior and Mode
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        flapperLeft.setPosition(flapperPosition);
-
+        flapperLeft.setPosition(flapperPosition); // Initial position for the left flapper
 
         telemetry.addLine("KURRY TeleOp Initialized");
         telemetry.update();
@@ -85,29 +94,39 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
+
+            // 1. Read Raw Driver Inputs
             double axial = -gamepad1.left_stick_y * SPEED_FACTOR;
             double lateral = gamepad1.left_stick_x * SPEED_FACTOR;
             double yaw = gamepad1.right_stick_x * SPEED_FACTOR;
 
-            Orientation angles = imu.getAngularOrientation();
-            double currentAngle = angles.firstAngle;
+            // 2. IMU Reading and Rotation Calculation
+            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+
+            // Get all three angles for display and drive control
+            double currentAngle = orientation.getYaw(AngleUnit.DEGREES); // Yaw is the heading for field-centric drive
             double botHeading = Math.toRadians(-currentAngle);
+            double pitch = orientation.getPitch(AngleUnit.DEGREES);
+            double roll = orientation.getRoll(AngleUnit.DEGREES);
+
             double rotatedLateral = (lateral * Math.cos(botHeading)) - (axial * Math.sin(botHeading));
             double rotatedAxial = (lateral * Math.sin(botHeading)) + (axial * Math.cos(botHeading));
 
-            // Calculate wheel powers
+            // 3. Calculate Wheel Powers (Field-Centric)
             double frontLeftPower = rotatedAxial + rotatedLateral + yaw;
             double frontRightPower = rotatedAxial - rotatedLateral - yaw;
             double backLeftPower = rotatedAxial - rotatedLateral + yaw;
             double backRightPower = rotatedAxial + rotatedLateral - yaw;
 
+            // 4. Normalization
             double maxPower = Math.max(
                     Math.abs(frontLeftPower),
                     Math.max(Math.abs(frontRightPower),
                             Math.max(Math.abs(backLeftPower), Math.abs(backRightPower))
-            ));;
+                    )
+            );
 
-            if (maxPower > 1) {
+            if (maxPower > 1.0) {
                 frontLeftPower /= maxPower;
                 frontRightPower /= maxPower;
                 backLeftPower /= maxPower;
@@ -119,46 +138,29 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
             frontRight.setPower(frontRightPower);
             backRight.setPower(backRightPower);
 
-            // Launch activation (A button)
+            // Launcher activation (FIXED BUG: Combined A/X and B/Y logic)
             if (gamepad2.a || gamepad2.x) {
                 launcherLeft.setPower(leftLaunchPower);
             } else {
                 launcherLeft.setPower(0);
             }
+
             if (gamepad2.b || gamepad2.y) {
                 launcherRight.setPower(rightLaunchPower);
             } else {
                 launcherRight.setPower(0);
             }
 
-            //if (gamepad1.b) {
-            //  rightLaunchPower += 0.05;
-            //if (rightLaunchPower > 1.0) {
-            //  rightLaunchPower = 1.0;
-            //}
-            //}
-            //}
-
-            //if (gamepad1.x) {
-            //  leftLaunchPower += 0.05;
-            //if (leftLaunchPower > 0.1) {
-            //  leftLaunchPower = 0.1;
-            //}
-
-            // -------------------------------
-            // Intake (Gamepad 1)
-            // -------------------------------
+            // Intake (SIMPLIFIED LOGIC: if/else if/else using BRAKE)
             if (gamepad1.right_trigger > 0.2) {
-                intake.setPower(0.8); //Intake Forward
+                intake.setPower(0.8);
             } else if (gamepad1.left_trigger > 0.2) {
-                intake.setPower(-0.8); //Intake Backward
+                intake.setPower(-0.8);
             } else {
-                intake.setPower(0); //Intake Off
+                intake.setPower(0.0);
             }
 
-            // -------------------------------
-            // Flapper Servo (Gamepad 2)
-            // -------------------------------
+            // Flapper Servo (Standard Servo Control)
             if (gamepad2.dpad_down) {
                 flapperPosition = 0.02;
             } else if (gamepad2.dpad_up) {
@@ -171,22 +173,24 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
                 flapperRight.setPosition(0.33);
             }
 
+            // CRServo Fix (Stop-on-release)
             if (gamepad2.right_stick_button) {
                 servoWheel.setPower(ServoWheelRIGHT);
             } else if (gamepad2.left_stick_button) {
                 servoWheel.setPower(ServoWheelLEFT);
-            } else if (gamepad2.right_bumper) {
+            } else {
                 servoWheel.setPower(ServoWheelSTOP);
             }
 
             flapperPosition = Math.max(0.0, Math.min(1.0, flapperPosition));
             flapperLeft.setPosition(flapperPosition);
 
-            telemetry.addData("Left Launch Power", "%.2f", leftLaunchPower);
-            telemetry.addData("Right Launch Power", "%.2f", rightLaunchPower);
+            telemetry.addData("Launch Power", "%.2f", leftLaunchPower);
             telemetry.addData("Flapper Pos", "%.2f", flapperPosition);
-            telemetry.addData("Flapper Pos", "%.2f", flapperRightPosition);
-            telemetry.addData("IMU Heading (deg)", "%.2f", angles.firstAngle); // ADDED: Telemetry for IMU
+            // Telemetry for all three rotational angles
+            telemetry.addData("Yaw (Heading)", "%.2f", currentAngle);
+            telemetry.addData("Pitch", "%.2f", pitch);
+            telemetry.addData("Roll", "%.2f", roll);
             telemetry.update();
 
             sleep(50);
