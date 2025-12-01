@@ -59,18 +59,18 @@ public class KurryAuto extends LinearOpMode {
 
         waitForStart();
 
-        turn(32,true);
-        shoot();//gotta fix this one
-        sleep(670);
-        turn(32,false);
-        driveStraight(1,true);
-        turn(90,true);
-        //have to add intake
-        driveStraight(1,false);
-        turn(32,true);
-        shoot();
-        turn(32,false); 
-        sleep(1500);
+//        turn(32,true);
+//        shoot();//gotta fix this one
+//        sleep(670);
+//        turn(32,false);
+//        driveStraight(1,true);
+//        turn(90,true);
+//        //have to add intake
+//        driveStraight(1,false);
+//        turn(32,true);
+//        shoot();
+//        turn(32,false);
+//        sleep(1500);
     }
 
     private void moveDivider(boolean isRight) {
