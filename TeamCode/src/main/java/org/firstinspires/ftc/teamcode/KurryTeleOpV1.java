@@ -9,7 +9,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "KURRY TeleOp", group = "Linear Opmode")
 public class KurryTeleOpV1 extends LinearOpMode {
-
+//11/30/25
+    //first We made both 1-there is a small difference in trajectory of balls :(
+    // We tested the midranfe with 0.55
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private Servo flapperLeft;
@@ -26,10 +28,9 @@ public class KurryTeleOpV1 extends LinearOpMode {
     final double flapperLEFT = 1;
     final double flapperLEFTSTOP = 0;
     final double flapperLEFTDOWN = -1;
-
     // Launcher speed presets
-    private double leftLaunchPower = 1;
-    private double rightLaunchPower = 0.65;
+    private double leftLaunchPower = 0.4;
+    private double rightLaunchPower = 0.55;
     private double leftLauncherPowerMID = 0.80;
     private double rightLauncherPowerMID = 0.80;
 
@@ -90,37 +91,27 @@ public class KurryTeleOpV1 extends LinearOpMode {
             backLeft.setPower(backLeftPower);
             frontRight.setPower(frontRightPower);
             backRight.setPower(backRightPower);
-
-            // Launch activation (A button)
             if (gamepad2.a) {
-                launcherLeft.setPower(1);
+                launcherLeft.setPower(leftLaunchPower);
             } else {
                 launcherLeft.setPower(0);
             }
             if (gamepad2.b) {
-                launcherRight.setPower(1);
+                launcherRight.setPower(rightLaunchPower);
             } else {
                 launcherRight.setPower(0);
             }
+            if (gamepad1.dpad_left){
+                rightLaunchPower +=0.01;
+            }else if(gamepad1.dpad_right){
+                rightLaunchPower -= 0.01;
+            }
+            if(gamepad1.dpad_down){
+                leftLaunchPower += 0.01;
+            } else if(gamepad1.dpad_up){
+                leftLaunchPower-= 0.01;
+            } else if (gamepad1.right_trigger > 0.2) {
 
-            //if (gamepad1.b) {
-            //  rightLaunchPower += 0.05;
-            //if (rightLaunchPower > 1.0) {
-            //  rightLaunchPower = 1.0;
-            //}
-            //}
-            //}
-
-            //if (gamepad1.x) {
-            //  leftLaunchPower += 0.05;
-            //if (leftLaunchPower > 0.1) {
-            //  leftLaunchPower = 0.1;
-            //}
-
-            // -------------------------------
-            // Intake (Gamepad 1)
-            // -------------------------------
-            if (gamepad1.right_trigger > 0.2) {
                 isHoldingTriggerR = true;
                 isHoldingPositionR = false;
                 intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -131,7 +122,7 @@ public class KurryTeleOpV1 extends LinearOpMode {
                 holdPosition = intake.getCurrentPosition();
                 intake.setTargetPosition(holdPosition);
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setPower(0.3);
+                     intake.setPower(0.3);
             }
 
             if (gamepad1.left_trigger > 0.2) {
@@ -147,36 +138,31 @@ public class KurryTeleOpV1 extends LinearOpMode {
                 intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 intake.setPower(0.8);
             }
-
-            // -------------------------------
-            // Flapper Servo (Gamepad 2)
-            // -------------------------------
             if (gamepad1.x) {
                 flapperLeftPosition = 0.3;
             } else if (gamepad1.y) {
                 flapperLeftPosition = 0.14;
             }
-//testing currently hehe
+
             if (gamepad1.a) {
                 flapperRightPosition = 0.58;
             } else if (gamepad1.b) {
                 flapperRightPosition = 0.71;
             }
 
-            if (gamepad2.right_stick_button) {
+            if (gamepad1.right_bumper) {
                 servoWheel.setPower(ServoWheelRIGHT);
 
-            } else if (gamepad2.left_stick_button) {
+            } else if (gamepad1.left_bumper) {
                 servoWheel.setPower(ServoWheelLEFT);
-            } else if (gamepad2.right_bumper) {
-                servoWheel.setPower(ServoWheelSTOP);
             }
-
+//            else if (gamepad1.dpad_down){
+//                servoWheel.setPower(ServoWheelSTOP);
+//            }
             flapperLeftPosition = Math.max(0.0, Math.min(1.0, flapperLeftPosition));
             flapperLeft.setPosition(flapperLeftPosition);
             flapperRightPosition = Math.max(0.0, Math.min(1.0, flapperRightPosition));
             flapperRight.setPosition(flapperRightPosition);
-
             telemetry.addData("Left Launch Power", "%.2f", leftLaunchPower);
             telemetry.addData("Right Launch Power", "%.2f", rightLaunchPower);
             telemetry.addData("Flapper left Pos", "%.2f", flapperLeftPosition);
