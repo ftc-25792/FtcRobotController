@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -11,23 +12,22 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "KurryAutoFull", group = "Linear Opmode")
-public class KurryAUTO extends LinearOpMode {
+@Autonomous(name = "KurryAutoFullRed", group = "Linear Opmode")
+public class KurryAuto extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
     private ElapsedTime runtime = new ElapsedTime();
-    private Servo flapperRight;
+    private Servo flapperRight, flapperLeft;
+    private CRServo divider;
+
     private static final double DRIVE_SPEED = 0.5;
     private static final double TURN_SPEED = 0.4;
     private static final double HEADING_THRESHOLD = 2.0;
-    private final double DIVIDER_LEFT = 0.15;
-    private final double DIVIDER_PUSH = 0.75;
 
     @Override
     public void runOpMode() {
-
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
@@ -35,10 +35,11 @@ public class KurryAUTO extends LinearOpMode {
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        flapperRight = hardwareMap.get(Servo.class, "servo1");
-//        flapperRight = hardwareMap.get(Servo.class, "servo2");
-//        divider = hardwareMap.get(Servo.class, "divider");
+        flapperRight = hardwareMap.get(Servo.class, "fr");
+        flapperLeft = hardwareMap.get(Servo.class, "fl");
+        divider = hardwareMap.get(CRServo.class, "sw");
         imu = hardwareMap.get(IMU.class, "imu");
+
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
                         RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -55,47 +56,32 @@ public class KurryAUTO extends LinearOpMode {
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
         flapperRight.setDirection(Servo.Direction.REVERSE);
         flapperRight.setPosition(0.22);
+
         waitForStart();
 
-        driveStraight(0.6,false);
-        flapper();
+        turn(32,true);
+        shoot();//gotta fix this one
+        sleep(670);
+        turn(32,false);
+        driveStraight(1,true);
+        turn(90,true);
+        //have to add intake
+        driveStraight(1,false);
+        turn(32,true);
+        shoot();
+        turn(32,false); 
         sleep(1500);
-        flapper();
-//        turn(45,false);
-//        driveStraight(0.5, true);
-//        driveStraight(0.5,false);
-//        turn(45,true);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
-//        turn(45,false);
-//        strafing(0.6, false);
-//        driveStraight(0.5, true);
-//        driveStraight(0.5,false);
-//        strafing(0.6, true);
-//        turn(45, true);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
-//        turn(45,false);
-//        strafing(1.2, false);
-//        driveStraight(0.5, true);
-//        driveStraight(0.5,false);
-//        strafing(1.2, true);
-//        turn(45, true);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
-//        moveDivider(DIVIDER_PUSH);
-//        flapper(false);
     }
 
-//    private void moveDivider(double position) {
-//        divider.setPosition(position);
-//        sleep(300);
-//        divider.setPosition(DIVIDER_LEFT);
-//    }
+    private void moveDivider(boolean isRight) {
+        if (!isRight){
+            divider.setPower(0.67);
+            sleep(300);
+        } else {
+            divider.setPower(-0.67);
+            sleep(300);
+        }
+    }
 
     private void driveStraight(double distance, boolean isForward) {
         if (isForward) setMotorPower(DRIVE_SPEED);
@@ -103,9 +89,9 @@ public class KurryAUTO extends LinearOpMode {
         sleep((long)(distance*1000/DRIVE_SPEED));
         setMotorPower(0);
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
         sleep(500);
-
     }
 
     private void driveBackward(double distance) {
@@ -113,6 +99,7 @@ public class KurryAUTO extends LinearOpMode {
         sleep((long)(distance*1000/DRIVE_SPEED));
         setMotorPower(0);
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
         sleep(500);
     }
@@ -132,6 +119,7 @@ public class KurryAUTO extends LinearOpMode {
         sleep((long)(distance*1000/DRIVE_SPEED));
         setMotorPower(0);
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
         sleep(1000);
     }
@@ -145,6 +133,7 @@ public class KurryAUTO extends LinearOpMode {
             frontLeft.setPower(DRIVE_SPEED);
         }
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
         sleep((long)(distance*1000/DRIVE_SPEED));
         setMotorPower(0);
@@ -160,6 +149,7 @@ public class KurryAUTO extends LinearOpMode {
             backLeft.setPower(-DRIVE_SPEED);
         }
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
         sleep((long)(distance*1000/DRIVE_SPEED));
         setMotorPower(0);
@@ -169,29 +159,29 @@ public class KurryAUTO extends LinearOpMode {
     private void turn(double angle, boolean isLeft) {
         imu.resetYaw();
         double startAngle = getHeading();
-        double targetAngle = startAngle+angle;
-        while(targetAngle>=180) targetAngle-=360;
-        while(targetAngle<-180) targetAngle+=360;
-        if(isLeft){
-            frontLeft.setPower(-TURN_SPEED);
-            frontRight.setPower(-TURN_SPEED);
-            backLeft.setPower(TURN_SPEED);
-            backRight.setPower(TURN_SPEED);
-        } else{
-            frontLeft.setPower(TURN_SPEED);
-            frontRight.setPower(TURN_SPEED);
-            backLeft.setPower(-TURN_SPEED);
-            backRight.setPower(-TURN_SPEED);
-        }
-        while(opModeIsActive() && !isAngleReached(targetAngle)) {
+        double targetAngle = normalizeAngle(startAngle + (isLeft ? angle : -angle));
+
+        while (opModeIsActive() && !isAngleReached(targetAngle)) {
+            double error = normalizeAngle(targetAngle - getHeading());
+
+            // Proportional control: slow down as we approach target
+            double scale = (Math.abs(error) > 10) ? 1.0 : 0.5;
+            double leftPower = -TURN_SPEED * Math.signum(error) * scale;
+            double rightPower = TURN_SPEED * Math.signum(error) * scale;
+
+            frontLeft.setPower(leftPower);
+            backLeft.setPower(leftPower);
+            frontRight.setPower(rightPower);
+            backRight.setPower(rightPower);
+
             telemetry.addData("Current Angle", getHeading());
             telemetry.addData("Target Angle", targetAngle);
+            telemetry.addData("Error", error);
             telemetry.update();
         }
-        launcherRight.setPower(0.65);
-        intake.setPower(1.0);
-        setMotorPower(0);
-        sleep(500);
+
+        setMotorPower(0); // Stop all motors
+        sleep(300); // Pause briefly after turning
     }
 
     private double getHeading() {
@@ -199,11 +189,15 @@ public class KurryAUTO extends LinearOpMode {
         return orientation.getYaw(AngleUnit.DEGREES);
     }
 
+    private double normalizeAngle(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle <= -180) angle += 360;
+        return angle;
+    }
+
     private boolean isAngleReached(double targetAngle) {
-        double currentAngle = getHeading();
-        while(currentAngle>=180) currentAngle-=360;
-        while(currentAngle<-180) currentAngle+=360;
-        return Math.abs(currentAngle-targetAngle)<HEADING_THRESHOLD;
+        double currentAngle = normalizeAngle(getHeading());
+        return Math.abs(currentAngle - targetAngle) < HEADING_THRESHOLD;
     }
 
     private void setMotorPower(double power) {
@@ -212,17 +206,24 @@ public class KurryAUTO extends LinearOpMode {
         backLeft.setPower(power);
         backRight.setPower(power);
         launcherRight.setPower(0.65);
+        launcherLeft.setPower(0.65);
         intake.setPower(1.0);
     }
 
     void flapper() {
-            flapperRight.setPosition(0.22);
-            sleep(1000);
-            flapperRight.setPosition(0.42);
-            sleep(1000);
-            flapperRight.setPosition(0.22);
-            launcherRight.setPower(0.65);
-            intake.setPower(1.0);
+        flapperRight.setPosition(0.33);
+        sleep(1000);
+        flapperRight.setPosition(0.67);
+        sleep(1000);
+        flapperRight.setPosition(0.33);
+        sleep(1000);
+        flapperLeft.setPosition(0.02);
+        sleep(1000);
+        flapperLeft.setPosition(0.28);
+        sleep(1000);
+        launcherLeft.setPower(0.65);
+        launcherRight.setPower(0.65);
+        intake.setPower(1.0);
     }
 
     private void shoot(boolean IsRight) {
