@@ -205,7 +205,7 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
                 servoWheel.setPower(ServoWheelRIGHT);
             } else if (gamepad2.left_stick_button) {
                 servoWheel.setPower(ServoWheelLEFT);
-            } else {
+            } else if (gamepad2.right_bumper) {
                 servoWheel.setPower(ServoWheelSTOP);
             }
 
