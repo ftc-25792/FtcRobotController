@@ -140,13 +140,13 @@ public class KurryTeleOpV1 extends LinearOpMode {
             }
             if (gamepad1.x) {
                 flapperLeftPosition = 0.3;
-            } else if (gamepad1.y) {
+                sleep(1000);
                 flapperLeftPosition = 0.14;
             }
 
             if (gamepad1.a) {
                 flapperRightPosition = 0.58;
-            } else if (gamepad1.b) {
+                sleep(1000);
                 flapperRightPosition = 0.71;
             }
 
