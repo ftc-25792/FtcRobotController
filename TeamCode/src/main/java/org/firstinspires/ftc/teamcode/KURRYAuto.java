@@ -26,6 +26,13 @@ public class KurryAuto extends LinearOpMode {
     private static final double TURN_SPEED = 0.4;
     private static final double HEADING_THRESHOLD = 2.0;
 
+    static final double WHEEL_DIAMETER_MM = 104;
+    static final double WHEEL_DIAMETER_IN = WHEEL_DIAMETER_MM / 25.4;
+    static final double WHEEL_CIRCUMFERENCE = Math.PI * WHEEL_DIAMETER_IN;
+
+    static final double TICKS_PER_REV = 384.5;
+    static final double TICKS_PER_INCH = TICKS_PER_REV / WHEEL_CIRCUMFERENCE;
+
     @Override
     public void runOpMode() {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
@@ -58,102 +65,158 @@ public class KurryAuto extends LinearOpMode {
         flapperRight.setPosition(0.22);
 
         waitForStart();
+        driveStraight(6,true);
+        turn(45,true);
 
-//        turn(32,true);
-//        shoot();//gotta fix this one
-//        sleep(670);
-//        turn(32,false);
-//        driveStraight(1,true);
-//        turn(90,true);
-//        //have to add intake
-//        driveStraight(1,false);
-//        turn(32,true);
-//        shoot();
-//        turn(32,false);
-//        sleep(1500);
     }
 
-    private void moveDivider(boolean isRight) {
-        if (!isRight){
-            divider.setPower(0.67);
-            sleep(300);
-        } else {
-            divider.setPower(-0.67);
-            sleep(300);
+    private void resetEncoders() {
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    private void setAllPower(double p) {
+        frontLeft.setPower(p);
+        frontRight.setPower(p);
+        backLeft.setPower(p);
+        backRight.setPower(p);
+    }
+
+    private void stopAll() {
+        setAllPower(0);
+        launcherLeft.setPower(0.65);
+        launcherRight.setPower(0.65);
+        intake.setPower(1.0);
+    }
+
+    // ---------- ENCODER DRIVE STRAIGHT ----------
+    private void driveStraight(double inches, boolean isForward) {
+        int move = (int)(inches * TICKS_PER_INCH);
+        if (!isForward) move = -move;
+
+        resetEncoders();
+
+        frontLeft.setTargetPosition(move);
+        frontRight.setTargetPosition(move);
+        backLeft.setTargetPosition(move);
+        backRight.setTargetPosition(move);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
+            telemetry.addData("Driving", inches);
+            telemetry.update();
         }
+
+        stopAll();
     }
 
-    private void driveStraight(double distance, boolean isForward) {
-        if (isForward) setMotorPower(DRIVE_SPEED);
-        else setMotorPower(-DRIVE_SPEED);
-        sleep((long)(distance*1000/DRIVE_SPEED));
-        setMotorPower(0);
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
-        sleep(500);
+    private void driveBackward(double inches) {
+        driveStraight(inches, false);
     }
 
-    private void driveBackward(double distance) {
-        setMotorPower(-DRIVE_SPEED);
-        sleep((long)(distance*1000/DRIVE_SPEED));
-        setMotorPower(0);
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
-        sleep(500);
-    }
+    private void strafing(double inches, boolean isLeft) {
+        double correction = 1.25;
+        int move = (int)(inches * TICKS_PER_INCH * correction);
 
-    private void strafing(double distance, boolean isLeft) {
+        resetEncoders();
+
         if (isLeft) {
-            frontLeft.setPower(-DRIVE_SPEED);
-            frontRight.setPower(DRIVE_SPEED);
-            backLeft.setPower(DRIVE_SPEED);
-            backRight.setPower(-DRIVE_SPEED);
+            frontLeft.setTargetPosition(-move);
+            frontRight.setTargetPosition(move);
+            backLeft.setTargetPosition(move);
+            backRight.setTargetPosition(-move);
         } else {
-            frontLeft.setPower(DRIVE_SPEED);
-            frontRight.setPower(-DRIVE_SPEED);
-            backLeft.setPower(-DRIVE_SPEED);
-            backRight.setPower(DRIVE_SPEED);
+            frontLeft.setTargetPosition(move);
+            frontRight.setTargetPosition(-move);
+            backLeft.setTargetPosition(-move);
+            backRight.setTargetPosition(move);
         }
-        sleep((long)(distance*1000/DRIVE_SPEED));
-        setMotorPower(0);
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
-        sleep(1000);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
+            telemetry.addData("Strafing", inches);
+            telemetry.update();
+        }
+
+        stopAll();
     }
 
-    private void UpDiagonalStraf(double distance, boolean IsUpperLeft) {
+    // ---------- ENCODER DIAGONAL UP ----------
+    private void UpDiagonalStraf(double inches, boolean IsUpperLeft) {
+        int move = (int)(inches * TICKS_PER_INCH);
+
+        resetEncoders();
+
         if (IsUpperLeft) {
-            frontRight.setPower(DRIVE_SPEED);
-            backLeft.setPower(DRIVE_SPEED);
+            frontRight.setTargetPosition(move);
+            backLeft.setTargetPosition(move);
         } else {
-            backRight.setPower(DRIVE_SPEED);
-            frontLeft.setPower(DRIVE_SPEED);
+            frontLeft.setTargetPosition(move);
+            backRight.setTargetPosition(move);
         }
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
-        sleep((long)(distance*1000/DRIVE_SPEED));
-        setMotorPower(0);
-        sleep(500);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
+            telemetry.update();
+        }
+
+        stopAll();
     }
 
-    private void DownDiagonalStraf(double distance, boolean IsLowerLeft) {
+    private void DownDiagonalStraf(double inches, boolean IsLowerLeft) {
+        int move = (int)(inches * TICKS_PER_INCH);
+
+        resetEncoders();
+
         if (IsLowerLeft) {
-            backRight.setPower(-DRIVE_SPEED);
-            frontLeft.setPower(-DRIVE_SPEED);
+            backRight.setTargetPosition(-move);
+            frontLeft.setTargetPosition(-move);
         } else {
-            frontRight.setPower(-DRIVE_SPEED);
-            backLeft.setPower(-DRIVE_SPEED);
+            frontRight.setTargetPosition(-move);
+            backLeft.setTargetPosition(-move);
         }
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
-        sleep((long)(distance*1000/DRIVE_SPEED));
-        setMotorPower(0);
-        sleep(500);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
+            telemetry.update();
+        }
+
+        stopAll();
     }
 
     private void turn(double angle, boolean isLeft) {
@@ -164,7 +227,6 @@ public class KurryAuto extends LinearOpMode {
         while (opModeIsActive() && !isAngleReached(targetAngle)) {
             double error = normalizeAngle(targetAngle - getHeading());
 
-            // Proportional control: slow down as we approach target
             double scale = (Math.abs(error) > 10) ? 1.0 : 0.5;
             double leftPower = -TURN_SPEED * Math.signum(error) * scale;
             double rightPower = TURN_SPEED * Math.signum(error) * scale;
@@ -180,8 +242,8 @@ public class KurryAuto extends LinearOpMode {
             telemetry.update();
         }
 
-        setMotorPower(0); // Stop all motors
-        sleep(300); // Pause briefly after turning
+        setAllPower(0);
+        sleep(300);
     }
 
     private double getHeading() {
@@ -198,16 +260,6 @@ public class KurryAuto extends LinearOpMode {
     private boolean isAngleReached(double targetAngle) {
         double currentAngle = normalizeAngle(getHeading());
         return Math.abs(currentAngle - targetAngle) < HEADING_THRESHOLD;
-    }
-
-    private void setMotorPower(double power) {
-        frontLeft.setPower(power);
-        frontRight.setPower(power);
-        backLeft.setPower(power);
-        backRight.setPower(power);
-        launcherRight.setPower(0.65);
-        launcherLeft.setPower(0.65);
-        intake.setPower(1.0);
     }
 
     void flapper() {
@@ -234,4 +286,5 @@ public class KurryAuto extends LinearOpMode {
         }
         sleep(2500);
     }
+
 }
