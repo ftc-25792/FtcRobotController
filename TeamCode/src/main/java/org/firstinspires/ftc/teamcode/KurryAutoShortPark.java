@@ -70,7 +70,6 @@ public class KurryAutoShortPark extends LinearOpMode {
         waitForStart();
         resetEncoders();
 
-        // Your autonomous path (unchanged)
         driveStraight(15, false);
         turn(135,false);
         driveStraight(15,true);
