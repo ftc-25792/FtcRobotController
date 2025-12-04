@@ -1,233 +1,262 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "AutoCodeMeet", group = "Yippee")
+@Autonomous(name = "Auto", group = "Aadith")
 public class BlueLeftDistanceBasedAutoDiagonal extends LinearOpMode {
 
-    private DcMotor frontLeft, backLeft, frontRight, backRight;
+    // Motors
+    private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
-    private DistanceSensor sensorDistance;
+
+    // Servos
+    private Servo flapperLeft, flapperRight;
+    private CRServo divider;
+
+    // IMU
     private IMU imu;
 
-    private final double DRIVE_POWER = 0.4;
-    private final double LAUNCH_POWER = 0.60;
-    private final long SPINUP_TIME_MS = 1000;
-    private final double DISTANCE_150CM = 150;
-    private final double DISTANCE_74CM = 74;
-    private final double DISTANCE_FORWARD_PER_SAMPLE = 7;
-    private final long INTAKE_MS = 500;
-    private final int LOOP_COUNT = 3;
-    private final double HEADING_THRESHOLD = 2.0;
+    // Constants
+    private static final double DRIVE_SPEED = 0.45;
+    private static final double TURN_SPEED = 0.40;
+    private static final double HEADING_THRESHOLD = 2.0;
+
+    // Wheel math
+    static final double WHEEL_DIAMETER_MM = 96;
+    static final double WHEEL_DIAMETER_IN = WHEEL_DIAMETER_MM / 25.4;
+    static final double WHEEL_CIRCUMFERENCE = Math.PI * WHEEL_DIAMETER_IN;
+
+    static final double TICKS_PER_REV = 537.7;
+    static final double TICKS_PER_INCH = TICKS_PER_REV / WHEEL_CIRCUMFERENCE;
+
+    // Converted CM → Inches
+    private static final double CM_TO_IN = 0.393701;
+    private static final double DISTANCE_150CM = 150 * CM_TO_IN;
+    private static final double DISTANCE_74CM = 74 * CM_TO_IN;
+    private static final double DISTANCE_FORWARD_SAMPLE = 7 * CM_TO_IN;
 
     @Override
     public void runOpMode() {
 
         // Hardware mapping
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+        backLeft  = hardwareMap.get(DcMotor.class, "backLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
+        backRight  = hardwareMap.get(DcMotor.class, "backRight");
+
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
+
+        flapperRight = hardwareMap.get(Servo.class, "fr");
+        flapperLeft  = hardwareMap.get(Servo.class, "fl");
+        divider = hardwareMap.get(CRServo.class, "sw");
+
         imu = hardwareMap.get(IMU.class, "imu");
 
-
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
-        launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        intake.setDirection(DcMotorSimple.Direction.FORWARD);
-
-
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
+        // IMU setup
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
                         RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-                )
-        );
+                        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+                ));
         imu.initialize(imuParameters);
 
-        telemetry.addLine("Ready");
+        // Motor directions
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        telemetry.addLine("Status: READY");
         telemetry.update();
+
         waitForStart();
 
         if (opModeIsActive()) {
 
-            driveForwardDistance(DRIVE_POWER, DISTANCE_150CM);
 
-            turnToAngle(0.4, 90, false);
+            driveStraight(DISTANCE_150CM, true);
 
-            driveForwardDistance(DRIVE_POWER, DISTANCE_74CM);
+            turnAngle(90, true);
 
-            launcherLeft.setPower(LAUNCH_POWER);
-            sleep(SPINUP_TIME_MS);
+            driveStraight(DISTANCE_74CM, true);
 
-            for (int i = 0; i < LOOP_COUNT; i++) {
-                pickupSamples(3, INTAKE_MS, DISTANCE_FORWARD_PER_SAMPLE);
-                backwards(0.5, 400);
+            launcherLeft.setPower(0.60);
+            launcherRight.setPower(0.60);
+            sleep(1000);
+
+            for (int i = 0; i < 3; i++) {
+                pickupSamples(3, 500, DISTANCE_FORWARD_SAMPLE);
+                driveStraight(400 * CM_TO_IN, false);
                 shoot();
-                strafeRightDistance(0.5, DISTANCE_74CM);
-                driveForwardDistance(DRIVE_POWER, DISTANCE_74CM);
+                strafe(DISTANCE_74CM, false);
+                driveStraight(DISTANCE_74CM, true);
             }
 
             launcherLeft.setPower(0);
             launcherRight.setPower(0);
             intake.setPower(0);
-            setAllPower(0);
+            stopAll();
 
-            telemetry.addLine("Auto complete");
+            telemetry.addLine("AUTO COMPLETE");
             telemetry.update();
         }
     }
 
+    private void resetEncoders() {
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-    private void setAllPower(double power) {
-        frontLeft.setPower(power);
-        backLeft.setPower(power);
-        frontRight.setPower(power);
-        backRight.setPower(power);
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    private void backwards(double power, double distanceCm) {
-        double startDistance = sensorDistance.getDistance(DistanceUnit.CM);
-        double distanceTraveled = 0;
+    private void setAllPower(double p) {
+        frontLeft.setPower(p);
+        backLeft.setPower(p);
+        frontRight.setPower(p);
+        backRight.setPower(p);
+    }
 
-        while (opModeIsActive() && distanceTraveled < distanceCm) {
-            frontLeft.setPower(-power);
-            backLeft.setPower(-power);
-            frontRight.setPower(-power);
-            backRight.setPower(-power);
+    private void stopAll() { setAllPower(0); }
 
-            double currentDistance = sensorDistance.getDistance(DistanceUnit.CM);
-            distanceTraveled = startDistance - currentDistance;
+    // ----------------- DRIVE STRAIGHT -----------------
+    private void driveStraight(double inches, boolean forward) {
+        int move = (int)(inches * TICKS_PER_INCH);
+        if (!forward) move = -move;
 
-            telemetry.addData("Strafe traveled (cm)", "%.1f / %.1f", distanceTraveled, distanceCm);
-            telemetry.update();
+        resetEncoders();
+
+        frontLeft.setTargetPosition(move);
+        frontRight.setTargetPosition(move);
+        backLeft.setTargetPosition(move);
+        backRight.setTargetPosition(move);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() ||
+                        backLeft.isBusy()  || backRight.isBusy())) {}
+
+        stopAll();
+    }
+
+    // ----------------- STRAFE -----------------
+    private void strafe(double inches, boolean left) {
+        int move = (int)(inches * TICKS_PER_INCH * 1.25);
+
+        resetEncoders();
+
+        if (left) {
+            frontLeft.setTargetPosition(-move);
+            backLeft.setTargetPosition(move);
+            frontRight.setTargetPosition(move);
+            backRight.setTargetPosition(-move);
+        } else {
+            frontLeft.setTargetPosition(move);
+            backLeft.setTargetPosition(-move);
+            frontRight.setTargetPosition(-move);
+            backRight.setTargetPosition(move);
         }
-        setAllPower(0);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setAllPower(DRIVE_SPEED);
+
+        while (opModeIsActive() &&
+                (frontLeft.isBusy() || frontRight.isBusy() ||
+                        backLeft.isBusy()  || backRight.isBusy())) {}
+
+        stopAll();
     }
 
-    private void pickupSamples(int count, long ms, double forwardCm) {
+    // ----------------- SAMPLE PICKUP -----------------
+    private void pickupSamples(int count, long ms, double forwardInches) {
         for (int i = 0; i < count; i++) {
             intake.setPower(0.8);
             sleep(ms);
             intake.setPower(0);
             sleep(150);
-            driveForwardDistance(DRIVE_POWER, forwardCm);
+            driveStraight(forwardInches, true);
         }
     }
 
+    // ----------------- SHOOT -----------------
     private void shoot() {
+        flapperLeft.setPosition(0.3);
+        flapperRight.setPosition(0.3);
         launcherLeft.setPower(1);
         launcherRight.setPower(1);
         sleep(400);
+        flapperLeft.setPosition(0);
+        flapperRight.setPosition(0);
         launcherLeft.setPower(0);
         launcherRight.setPower(0);
         sleep(300);
     }
 
-    private void driveForwardDistance(double power, double distanceCm) {
-        double startDistance = sensorDistance.getDistance(DistanceUnit.CM);
-        double distanceTraveled = 0;
-        while (opModeIsActive() && distanceTraveled < distanceCm) {
-            setAllPower(power);
-            double currentDistance = sensorDistance.getDistance(DistanceUnit.CM);
-            distanceTraveled = startDistance - currentDistance;
-            telemetry.addData("Distance traveled (cm)", "%.1f / %.1f", distanceTraveled, distanceCm);
-            telemetry.update();
-        }
-        setAllPower(0);
-    }
-    private void turnToAngle(double power, double targetAngle, boolean isLeft) {
-
-        double degreesToTurn = isLeft ? -targetAngle : targetAngle;
-
-        double startAngle = getHeading();
-        double desiredAngle = startAngle + degreesToTurn;
-
-        while (desiredAngle >= 180) desiredAngle -= 360;
-        while (desiredAngle < -180) desiredAngle += 360;
-
-        telemetry.addData("Turn start", "%.2f", startAngle);
-        telemetry.addData("Turning to", "%.2f", desiredAngle);
-        telemetry.update();
-
-        boolean turnRight = degreesToTurn > 0;
-        double turnPower = Math.abs(power);
-
-        if (turnRight) {
-            frontLeft.setPower(turnPower);
-            backLeft.setPower(turnPower);
-            frontRight.setPower(-turnPower);
-            backRight.setPower(-turnPower);
-        } else {
-            frontLeft.setPower(-turnPower);
-            backLeft.setPower(-turnPower);
-            frontRight.setPower(turnPower);
-            backRight.setPower(turnPower);
-        }
-
-
-        while (opModeIsActive() && !isAngleReached(desiredAngle)) {
-            telemetry.addData("Heading", "%.2f", getHeading());
-            telemetry.addData("Target", "%.2f", desiredAngle);
-            telemetry.update();
-        }
-
-        setAllPower(0);
-        sleep(200);
-    }
-
-    private void strafeRightDistance(double power, double distanceCm) {
-        double startDistance = sensorDistance.getDistance(DistanceUnit.CM);
-        double distanceTraveled = 0;
-
-        while (opModeIsActive() && distanceTraveled < distanceCm) {
-            frontLeft.setPower(power);
-            backLeft.setPower(-power);
-            frontRight.setPower(-power);
-            backRight.setPower(power);
-
-            double currentDistance = sensorDistance.getDistance(DistanceUnit.CM);
-            distanceTraveled = startDistance - currentDistance;
-
-            telemetry.addData("Strafe traveled (cm)", "%.1f / %.1f", distanceTraveled, distanceCm);
-            telemetry.update();
-        }
-        setAllPower(0);
-    }
-
+    // -----------------------------------------------------------
+    // IMU TURNING
+    // -----------------------------------------------------------
     private double getHeading() {
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        return orientation.getYaw(AngleUnit.DEGREES);
+        YawPitchRollAngles angle = imu.getRobotYawPitchRollAngles();
+        return angle.getYaw(AngleUnit.DEGREES);
     }
 
-    private boolean isAngleReached(double targetAngle) {
-        double current = getHeading();
-        double desiredAngle = targetAngle - current;
-        while (desiredAngle > 180) desiredAngle -= 360;
-        while (desiredAngle< -180) desiredAngle += 360;
-        return Math.abs(desiredAngle) < HEADING_THRESHOLD;
+    private double normalize(double a) {
+        while (a > 180) a -= 360;
+        while (a <= -180) a += 360;
+        return a;
+    }
+
+    private boolean reached(double target) {
+        double error = normalize(target - getHeading());
+        return Math.abs(error) < HEADING_THRESHOLD;
+    }
+
+    private void turnAngle(double angle, boolean leftTurn) {
+        imu.resetYaw();
+
+        double start = getHeading();
+        double target = normalize(start + (leftTurn ? angle : -angle));
+
+        while (opModeIsActive() && !reached(target)) {
+
+            double error = normalize(target - getHeading());
+            double power = Math.copySign(TURN_SPEED, error);
+
+            frontLeft.setPower(-power);
+            backLeft.setPower(-power);
+            frontRight.setPower(power);
+            backRight.setPower(power);
+        }
+
+        stopAll();
+        sleep(200);
     }
 }

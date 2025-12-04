@@ -35,7 +35,6 @@ public class RedNonGoalStarting extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        // Hardware mapping
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -46,7 +45,6 @@ public class RedNonGoalStarting extends LinearOpMode {
         sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         imu = hardwareMap.get(IMU.class, "imu");
 
-
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -54,11 +52,9 @@ public class RedNonGoalStarting extends LinearOpMode {
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.FORWARD);
 
-
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
 
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -72,13 +68,13 @@ public class RedNonGoalStarting extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        if (opModeIsActive()) {
+        waitForStart(); {
 
             driveForwardDistance(DRIVE_POWER, DISTANCE_150CM);
 
             turnToAngle(0.4, 90, true);
 
-            driveForwardDistance(DRIVE_POWER, DISTANCE_28CM);
+            driveForwardDistance(DRIVE_POWER, DISTANCE_74CM);
 
             launcherLeft.setPower(LAUNCH_POWER);
             sleep(SPINUP_TIME_MS);
@@ -100,8 +96,6 @@ public class RedNonGoalStarting extends LinearOpMode {
             telemetry.update();
         }
     }
-
-
     private void setAllPower(double power) {
         frontLeft.setPower(power);
         backLeft.setPower(power);
@@ -185,8 +179,6 @@ public class RedNonGoalStarting extends LinearOpMode {
             frontRight.setPower(turnPower);
             backRight.setPower(turnPower);
         }
-
-
         while (opModeIsActive() && !isAngleReached(desiredAngle)) {
             telemetry.addData("Heading", "%.2f", getHeading());
             telemetry.addData("Target", "%.2f", desiredAngle);

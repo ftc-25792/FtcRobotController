@@ -15,7 +15,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @Autonomous(name = "AutoCodeMeet", group = "Yippee")
-public class BlueNonGoalStarting extends LinearOpMode {
+public class REDGoalStartingNoDistanceSensor extends LinearOpMode {
 
     private DcMotor frontLeft, backLeft, frontRight, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
@@ -23,7 +23,7 @@ public class BlueNonGoalStarting extends LinearOpMode {
     private IMU imu;
 
     private final double DRIVE_POWER = 0.4;
-    private final double LAUNCH_POWER = 0.60;
+    private final double LAUNCH_POWER = 0.9;
     private final long SPINUP_TIME_MS = 1000;
     private final double DISTANCE_150CM = 150;
     private final double DISTANCE_74CM = 74;
@@ -72,7 +72,7 @@ public class BlueNonGoalStarting extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        waitForStart(); {
+          waitForStart(); {
 
             driveForwardDistance(DRIVE_POWER, DISTANCE_150CM);
 
