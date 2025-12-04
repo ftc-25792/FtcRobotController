@@ -140,14 +140,14 @@ public class KurryTeleOpV1 extends LinearOpMode {
             }
             if (gamepad1.x) {
                 flapperLeftPosition = 0.3;
-                sleep(1000);
+            }else if(gamepad1.b){
                 flapperLeftPosition = 0.14;
             }
-
             if (gamepad1.a) {
                 flapperRightPosition = 0.58;
-                sleep(1000);
-                flapperRightPosition = 0.71;
+            }
+            else if(gamepad1.y){
+                flapperRightPosition =0.71;
             }
 
             if (gamepad1.right_bumper) {
@@ -156,9 +156,9 @@ public class KurryTeleOpV1 extends LinearOpMode {
             } else if (gamepad1.left_bumper) {
                 servoWheel.setPower(ServoWheelLEFT);
             }
-//            else if (gamepad1.dpad_down){
-//                servoWheel.setPower(ServoWheelSTOP);
-//            }
+            else if (gamepad1.right_stick_button){
+                servoWheel.setPower(ServoWheelSTOP);
+            }
             flapperLeftPosition = Math.max(0.0, Math.min(1.0, flapperLeftPosition));
             flapperLeft.setPosition(flapperLeftPosition);
             flapperRightPosition = Math.max(0.0, Math.min(1.0, flapperRightPosition));
