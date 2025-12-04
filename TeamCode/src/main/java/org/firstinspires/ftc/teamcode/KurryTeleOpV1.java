@@ -29,7 +29,7 @@ public class KurryTeleOpV1 extends LinearOpMode {
     final double flapperLEFTSTOP = 0;
     final double flapperLEFTDOWN = -1;
     // Launcher speed presets
-    private double leftLaunchPower = 0.4;
+    private double leftLaunchPower = 0.5367;
     private double rightLaunchPower = 0.55;
     private double leftLauncherPowerMID = 0.80;
     private double rightLauncherPowerMID = 0.80;
@@ -139,16 +139,28 @@ public class KurryTeleOpV1 extends LinearOpMode {
                 intake.setPower(0.8);
             }
             if (gamepad1.x) {
-                flapperLeftPosition = 0.3;
-            }else if(gamepad1.b){
                 flapperLeftPosition = 0.14;
+                flapperLeftPosition = Math.max(0.0, Math.min(1.0, flapperLeftPosition));
+                flapperLeft.setPosition(flapperLeftPosition);
+                sleep(1000);
+                flapperLeftPosition = 0.3;
+                flapperLeftPosition = Math.max(0.0, Math.min(1.0, flapperLeftPosition));
+                flapperLeft.setPosition(flapperLeftPosition);
             }
+
+
+
             if (gamepad1.a) {
                 flapperRightPosition = 0.58;
-            }
-            else if(gamepad1.y){
+                flapperRightPosition = Math.max(0.0, Math.min(1.0, flapperRightPosition));
+                flapperRight.setPosition(flapperRightPosition);
+                sleep(1000);
                 flapperRightPosition =0.71;
+                flapperRightPosition = Math.max(0.0, Math.min(1.0, flapperRightPosition));
+                flapperRight.setPosition(flapperRightPosition);
+
             }
+
 
             if (gamepad1.right_bumper) {
                 servoWheel.setPower(ServoWheelRIGHT);
@@ -159,10 +171,8 @@ public class KurryTeleOpV1 extends LinearOpMode {
             else if (gamepad1.right_stick_button){
                 servoWheel.setPower(ServoWheelSTOP);
             }
-            flapperLeftPosition = Math.max(0.0, Math.min(1.0, flapperLeftPosition));
-            flapperLeft.setPosition(flapperLeftPosition);
-            flapperRightPosition = Math.max(0.0, Math.min(1.0, flapperRightPosition));
-            flapperRight.setPosition(flapperRightPosition);
+
+
             telemetry.addData("Left Launch Power", "%.2f", leftLaunchPower);
             telemetry.addData("Right Launch Power", "%.2f", rightLaunchPower);
             telemetry.addData("Flapper left Pos", "%.2f", flapperLeftPosition);
