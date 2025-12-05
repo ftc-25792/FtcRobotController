@@ -94,7 +94,7 @@ public class KurryTeleOpwithGyroV1 extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // --- 0. MODE TOGGLE: Option 1 (Single Button: Back) ---
+            // --- 0. MODE TOGGLE: (Single Button: Back) ---
             boolean currentToggleState = gamepad1.back;
 
             if (currentToggleState && !lastToggleState) {
