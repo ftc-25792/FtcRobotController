@@ -135,7 +135,7 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
     // They can/should be tweaked to suit the specific robot drive train.
     static final double     DRIVE_SPEED             = 0.4;     // Max driving speed for better distance accuracy.
     static final double     TURN_SPEED              = 0.2;     // Max turn speed to limit turn rate.
-    static final double     HEADING_THRESHOLD       = 1.0 ;    // How close must the heading get to the target before moving to next step.
+    static final double     HEADING_THRESHOLD       = 2.0 ;    // How close must the heading get to the target before moving to next step.
     // Requiring more accuracy (a smaller number) will often make the turn take longer to get into the final position.
     // Define the Proportional control coefficient (or GAIN) for "heading control".
     // We define one value when Turning (larger errors), and the other is used when Driving straight (smaller errors).
@@ -143,6 +143,8 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
     // Decrease these numbers if the heading does not settle on the correct value (eg: very agile robot with omni wheels)
     static final double     P_TURN_GAIN            = 0.02;     // Larger is more responsive, but also less stable.
     static final double     P_DRIVE_GAIN           = 0.03;     // Larger is more responsive, but also less stable.
+
+    static final double TIMEOUT_SECONDS = 5.0;
 
 
     @Override
@@ -167,10 +169,14 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         );
         imu.initialize(imuParameters);
 
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
+
+
 
         launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -189,9 +195,14 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        imu.resetYaw();
+
+
         // Wait for the game to start (Display Gyro value while waiting)
         while (opModeInInit()) {
             telemetry.addData(">", "Robot Heading = %4.0f", getHeading());
+            telemetry.addData(">", "Robot Pitch = %4.0f", getPitch());
+            telemetry.addData(">", "Robot Roll = %4.0f", getRoll());
             telemetry.update();
         }
 
@@ -207,11 +218,26 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         //          holdHeading() is used after turns to let the heading stabilize
         //          Add a sleep(2000) after any step to keep the telemetry data visible for review
 
-        driveStraight(DRIVE_SPEED, 24.0, 0.0);    // Drive Forward 24"
-        turnToHeading( TURN_SPEED, -45.0);               // Turn  CW to -45 Degrees
-       /* holdHeading( TURN_SPEED, -45.0, 0.5);   // Hold -45 Deg heading for a 1/2 second
 
-        driveStraight(DRIVE_SPEED, 17.0, -45.0);  // Drive Forward 17" at -45 degrees (12"x and 12"y)
+       // sleep(3000);
+
+        driveStraight(DRIVE_SPEED, 24.0, 0.0);// Drive Forward 24"
+        sleep(2000);
+        /*
+        turnRelative( TURN_SPEED, 90.0);               // Turn CCW to 90 Degrees
+        sleep(2000);
+
+        turnRelative( TURN_SPEED, -90.0);               // Turn CW to 90 Degrees
+        sleep(2000);*/
+
+        turnRelative( TURN_SPEED, -45.0);               // Turn CW to 45 Degrees
+        sleep(2000);
+
+        turnRelative( TURN_SPEED, 45.0);               // Turn CCW to 45 Degrees
+        sleep(2000);
+        //holdHeading( TURN_SPEED, 90.0, 0.5);   // Hold -45 Deg heading for a 1/2 second
+
+       /* driveStraight(DRIVE_SPEED, 17.0, -45.0);  // Drive Forward 17" at -45 degrees (12"x and 12"y)
         turnToHeading( TURN_SPEED,  45.0);               // Turn  CCW  to  45 Degrees
         holdHeading( TURN_SPEED,  45.0, 0.5);    // Hold  45 Deg heading for a 1/2 second
 
@@ -303,6 +329,13 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         }
     }
 
+
+    public void turnRelative(double maxTurnSpeed, double deltaAngle)
+    {
+        double targetHeading = AngleUnit.normalizeDegrees(getHeading()+deltaAngle);
+        turnToHeading(maxTurnSpeed,targetHeading);
+    }
+
     /**
      * Spin on the central axis to point in a new direction.
      * <p>
@@ -322,8 +355,12 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         // Run getSteeringCorrection() once to pre-calculate the current error
         getSteeringCorrection(heading, P_DRIVE_GAIN);
 
+        ElapsedTime runtime = new ElapsedTime();
+        runtime.reset();
+
         // keep looping while we are still active, and not on heading.
-        while (opModeIsActive() && (Math.abs(headingError) > HEADING_THRESHOLD)) {
+        while (opModeIsActive() && (Math.abs(headingError) > HEADING_THRESHOLD)
+        && runtime.seconds() < TIMEOUT_SECONDS) {
 
             // Determine required steering to keep on heading
             turnSpeed = getSteeringCorrection(heading, P_TURN_GAIN);
@@ -331,12 +368,17 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
             // Clip the speed to the maximum permitted value.
             turnSpeed = Range.clip(turnSpeed, -maxTurnSpeed, maxTurnSpeed);
 
+            if(Math.abs(turnSpeed) < 0.05){
+                break;
+            }
+
             // Pivot in place by applying the turning correction
             // Pivot in place by applying the turning correction
             moveRobot(0, turnSpeed);
 
             // Display drive status for the driver.
             sendTelemetry(false);
+
         }
 
         // Stop all motion;
@@ -390,17 +432,18 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
      * @return                      Turning power needed to get to required heading.
      */
     public double getSteeringCorrection(double desiredHeading, double proportionalGain) {
+        double currentHeading = getHeading();
+
         targetHeading = desiredHeading;  // Save for telemetry
 
         // Determine the heading current error
-        headingError = targetHeading - getHeading();
 
-        // Normalize the error to be within +/- 180 degrees
-        while (headingError > 180)  headingError -= 360;
-        while (headingError <= -180) headingError += 360;
+        double error = AngleUnit.normalizeDegrees(desiredHeading-currentHeading);
+        headingError =  error;
 
         // Multiply the error by the gain to determine the required steering correction/  Limit the result to +/- 1.0
-        return Range.clip(headingError * proportionalGain, -1, 1);
+        double steer =  Range.clip(headingError * proportionalGain, -1, 1);
+        return steer;
     }
 
     /**
@@ -463,7 +506,8 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         }
 
         telemetry.addData("Heading- Target : Current", "%5.2f : %5.0f", targetHeading, getHeading());
-        telemetry.addData("Error  : Steer Pwr",  "%5.1f : %5.1f", headingError, turnSpeed);
+        telemetry.addData("Error  ",  "%5.1f", headingError);
+        telemetry.addData("Turn SPeed Power ", "%5.1f",turnSpeed);
         telemetry.addData("Wheel Speeds L : R", "%5.2f : %5.2f", leftSpeed, rightSpeed);
         telemetry.update();
     }
@@ -474,6 +518,17 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
     public double getHeading() {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         return orientation.getYaw(AngleUnit.DEGREES);
+    }
+
+    public double getPitch(){
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getPitch(AngleUnit.DEGREES);
+    }
+
+    public double getRoll()
+    {
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getRoll(AngleUnit.DEGREES);
     }
 
 }
