@@ -92,7 +92,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
  */
 
 @Autonomous(name="Robot: Auto Drive By Gyro (4-Motor)", group="Robot")
-@Disabled
+
 public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
 
     /* Declare OpMode members. */
@@ -461,4 +461,5 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         return orientation.getYaw(AngleUnit.DEGREES);
     }
+
 }
