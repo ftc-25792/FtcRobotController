@@ -35,6 +35,7 @@ public class AutoCode extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        // --- Hardware Mapping ---
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
@@ -47,13 +48,15 @@ public class AutoCode extends LinearOpMode {
         divider = hardwareMap.get(CRServo.class, "sw");
         imu = hardwareMap.get(IMU.class, "imu");
 
+
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
                         RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
                 )
         );
         imu.initialize(imuParameters);
+
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.REVERSE);
@@ -64,11 +67,19 @@ public class AutoCode extends LinearOpMode {
         flapperRight.setDirection(Servo.Direction.REVERSE);
         flapperRight.setPosition(0.22);
 
-        waitForStart();
-        driveStraight(6,true);
-        turn(45,true);
 
+        waitForStart();
+        resetEncoders();
+
+        driveStraight(20, true);
+        turn(45, true);
+        driveStraight(15, true);
+        shoot();
+        driveBackward(10);
+        strafing(12, true);
+        shoot();
     }
+
 
     private void resetEncoders() {
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -91,12 +102,11 @@ public class AutoCode extends LinearOpMode {
 
     private void stopAll() {
         setAllPower(0);
-        launcherLeft.setPower(0.65);
-        launcherRight.setPower(0.65);
-        intake.setPower(1.0);
+        launcherLeft.setPower(0);
+        launcherRight.setPower(0);
+        intake.setPower(0);
     }
 
-    // ---------- ENCODER DRIVE STRAIGHT ----------
     private void driveStraight(double inches, boolean isForward) {
         int move = (int)(inches * TICKS_PER_INCH);
         if (!isForward) move = -move;
@@ -162,63 +172,6 @@ public class AutoCode extends LinearOpMode {
         stopAll();
     }
 
-    // ---------- ENCODER DIAGONAL UP ----------
-    private void UpDiagonalStraf(double inches, boolean IsUpperLeft) {
-        int move = (int)(inches * TICKS_PER_INCH);
-
-        resetEncoders();
-
-        if (IsUpperLeft) {
-            frontRight.setTargetPosition(move);
-            backLeft.setTargetPosition(move);
-        } else {
-            frontLeft.setTargetPosition(move);
-            backRight.setTargetPosition(move);
-        }
-
-        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        setAllPower(DRIVE_SPEED);
-
-        while (opModeIsActive() &&
-                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
-            telemetry.update();
-        }
-
-        stopAll();
-    }
-
-    private void DownDiagonalStraf(double inches, boolean IsLowerLeft) {
-        int move = (int)(inches * TICKS_PER_INCH);
-
-        resetEncoders();
-
-        if (IsLowerLeft) {
-            backRight.setTargetPosition(-move);
-            frontLeft.setTargetPosition(-move);
-        } else {
-            frontRight.setTargetPosition(-move);
-            backLeft.setTargetPosition(-move);
-        }
-
-        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        setAllPower(DRIVE_SPEED);
-
-        while (opModeIsActive() &&
-                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy())) {
-            telemetry.update();
-        }
-
-        stopAll();
-    }
-
     private void turn(double angle, boolean isLeft) {
         imu.resetYaw();
         double startAngle = getHeading();
@@ -262,29 +215,27 @@ public class AutoCode extends LinearOpMode {
         return Math.abs(currentAngle - targetAngle) < HEADING_THRESHOLD;
     }
 
-    void flapper() {
-        flapperRight.setPosition(0.33);
-        sleep(1000);
-        flapperRight.setPosition(0.67);
-        sleep(1000);
-        flapperRight.setPosition(0.33);
-        sleep(1000);
-        flapperLeft.setPosition(0.02);
-        sleep(1000);
-        flapperLeft.setPosition(0.28);
-        sleep(1000);
-        launcherLeft.setPower(0.65);
-        launcherRight.setPower(0.65);
-        intake.setPower(1.0);
-    }
 
-    private void shoot(boolean IsRight) {
-        if(IsRight) {
-            launcherRight.setPower(0.8);
-        } else{
-            launcherLeft.setPower(0.8);
-        }
-        sleep(2500);
+    private void shoot() {
+
+        launcherLeft.setPower(0.8);
+        launcherRight.setPower(0.8);
+        sleep(1200);
+
+
+        intake.setPower(1.0);
+
+
+        flapperRight.setPosition(0.67);
+        sleep(700);
+        flapperRight.setPosition(0.33);
+
+        sleep(800);
+
+
+        launcherLeft.setPower(0);
+        launcherRight.setPower(0);
+        intake.setPower(0);
     }
 
 }
