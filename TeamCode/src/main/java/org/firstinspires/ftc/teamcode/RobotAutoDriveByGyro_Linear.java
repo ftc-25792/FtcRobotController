@@ -410,25 +410,39 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
      * @param turn  clockwise turning motor speed.
      */
     public void moveRobot(double drive, double turn) {
-        driveSpeed = drive;     // save this value as a class member so it can be used by telemetry.
-        turnSpeed  = turn;      // save this value as a class member so it can be used by telemetry.
+        driveSpeed = drive; // Save for telemetry
+        turnSpeed  = turn;  // Save for telemetry
 
-        leftSpeed  = drive - turn;
-        rightSpeed = drive + turn;
+        // Mecanum Kinematics for Y-Drive and T-Turn (assuming no strafe X=0):
+        // All motors on the left side spin the same way for turning.
+        // All motors on the right side spin the opposite way for turning.
+        double frontLeftPower = drive + turn;
+        double frontRightPower = drive - turn;
+        double backLeftPower = drive + turn;
+        double backRightPower = drive - turn;
 
-        // Scale speeds down if either one exceeds +/- 1.0;
-        double max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
+        // Scale speeds down if any one exceeds +/- 1.0;
+        double max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
+        max = Math.max(max, Math.abs(backLeftPower));
+        max = Math.max(max, Math.abs(backRightPower));
+
         if (max > 1.0)
         {
-            leftSpeed /= max;
-            rightSpeed /= max;
+            frontLeftPower /= max;
+            frontRightPower /= max;
+            backLeftPower /= max;
+            backRightPower /= max;
         }
 
         // Apply power to all four motors!
-        frontLeft.setPower(leftSpeed);
-        frontRight.setPower(rightSpeed);
-        backLeft.setPower(leftSpeed);
-        backRight.setPower(rightSpeed);
+        frontLeft.setPower(frontLeftPower);
+        frontRight.setPower(frontRightPower);
+        backLeft.setPower(backLeftPower);
+        backRight.setPower(backRightPower);
+
+        // Retain leftSpeed/rightSpeed for existing telemetry
+        leftSpeed = frontLeftPower;
+        rightSpeed = frontRightPower;
     }
 
     /**
@@ -463,3 +477,4 @@ public class RobotAutoDriveByGyro_Linear extends LinearOpMode {
     }
 
 }
+
