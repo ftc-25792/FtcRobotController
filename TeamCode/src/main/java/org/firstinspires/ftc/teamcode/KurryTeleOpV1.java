@@ -26,10 +26,10 @@ public class KurryTeleOpV1 extends LinearOpMode {
     final double ServoWheelLEFT = -1;
 
     // Launcher speed presets
-    private double leftLaunchPower = 0.5367;
-    private double rightLaunchPower = 0.55;
-    private double leftLauncherPowerMID = 0.80;
-    private double rightLauncherPowerMID = 0.80;
+    private double leftLaunchPower = 0.4;
+    private double rightLaunchPower = 0.4;
+    private double leftLauncherPowerMID = 0.57;
+    private double rightLauncherPowerMID = 0.6;
     private double leftLauncherXC = 1.0;
     private double rightLauncherXC = 1.0;
 
@@ -53,10 +53,11 @@ public class KurryTeleOpV1 extends LinearOpMode {
         servoWheel = hardwareMap.get(CRServo.class, "sw");
 
         // Motor directions
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
         launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -103,12 +104,12 @@ public class KurryTeleOpV1 extends LinearOpMode {
             double powerR = 0;
             double powerL = 0;
 
-            if (gamepad2.dpad_up) powerR = rightLaunchPower;
-            if (gamepad2.y) powerL = leftLaunchPower;
-            if (gamepad2.b) powerL = leftLauncherPowerMID;
-            if (gamepad2.dpad_left) powerR = rightLauncherPowerMID;
-            if (gamepad2.a) powerL = leftLauncherXC;
-            if (gamepad2.dpad_down) powerR = rightLauncherXC;
+            if (gamepad2.left_trigger> 0.2) powerR = 0.4;
+            if (gamepad2.right_trigger>0.2) powerL = 0.5;
+            if (gamepad2.right_bumper) powerL = leftLauncherPowerMID;
+            if (gamepad2.left_bumper) powerR = rightLauncherPowerMID;
+            if (gamepad2.y) powerL = leftLauncherXC;
+            if (gamepad2.dpad_up) powerR = rightLauncherXC;
 
             launcherRight.setPower(powerR);
             launcherLeft.setPower(powerL);
@@ -143,24 +144,24 @@ public class KurryTeleOpV1 extends LinearOpMode {
             }
 
             // Flapper control (no sleep, just toggle positions)
-            if (gamepad2.x) {
+            if (gamepad2.b) {
                 flapperLeft.setPosition(0.14);
             } else {
                 flapperLeft.setPosition(flapperLeftPosition);
             }
 
-            if (gamepad2.dpad_right) {
+            if (gamepad2.dpad_left) {
                 flapperRight.setPosition(0.58);
             } else {
                 flapperRight.setPosition(flapperRightPosition);
             }
 
             // Servo wheel control
-            if (gamepad2.right_bumper) {
+            if (gamepad2.left_stick_button) {
                 servoWheel.setPower(ServoWheelRIGHT);
-            } else if (gamepad2.left_bumper) {
-                servoWheel.setPower(ServoWheelLEFT);
             } else if (gamepad2.right_stick_button) {
+                servoWheel.setPower(ServoWheelLEFT);
+            } else if (gamepad2.dpad_down) {
                 servoWheel.setPower(ServoWheelSTOP);
             }
 
