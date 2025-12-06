@@ -14,8 +14,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "KurryAutoShortScoreR", group = "Linear Opmode")
-public class KurryAutoShortScoreRed extends LinearOpMode {
+@Autonomous(name = "KurryAutoShortScoreRed", group = "Linear Opmode")
+public class KurryAutoShortScoreRedPPG extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
@@ -93,9 +93,10 @@ public class KurryAutoShortScoreRed extends LinearOpMode {
         launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        flapperRight.setDirection(Servo.Direction.REVERSE);
-        flapperLeft.setDirection(Servo.Direction.FORWARD);
-        flapperRight.setPosition(0.22);
+        flapperLeft.setDirection(Servo.Direction.REVERSE);
+        flapperRight.setDirection(Servo.Direction.FORWARD);
+        flapperRight.setPosition(0.71);
+        flapperLeft.setPosition(0.3);
         imu.resetYaw();
 
         waitForStart();
@@ -104,30 +105,28 @@ public class KurryAutoShortScoreRed extends LinearOpMode {
         // Your autonomous path (unchanged)
         launcherLeft.setPower(.40);
         launcherRight.setPower(.40);
-        driveStraight(15, false);
+        driveStraight(25, false);
         launch(1);
-        turnRelative(0.5,-45);
     }
     private void launch(double t){
         if(t==1){
-            flapperLeft.setPosition(0.3);
-            sleep(1000);
-            flapperLeft.setPosition(0.14);
-            sleep(1000);
-            flapperRight.setPosition(0.71);
-            sleep(1000);
-            flapperRight.setPosition(0.58);
-            sleep(1000);
-            divider.setPower(1);
-            sleep(2000);
-            flapperRight.setPosition(0.71);
-            sleep(1000);
-            flapperRight.setPosition(0.58);
-            sleep(1000);
-            flapperLeft.setPosition(0.3);
-            sleep(1000);
-            flapperLeft.setPosition(0.14);
 
+            sleep(5000);
+            flapperRight.setPosition(0.58);
+            sleep(1000);
+            flapperRight.setPosition(0.71);
+            sleep(1000);
+
+            flapperLeft.setPosition(0.14);
+            sleep(1000);
+            flapperLeft.setPosition(0.3);
+            sleep(1000);
+
+            divider.setPower(1);//Positive right.
+            sleep(3000);
+            flapperRight.setPosition(0.58);
+            sleep(1000);
+            flapperRight.setPosition(0.71);
 
         }
     }
