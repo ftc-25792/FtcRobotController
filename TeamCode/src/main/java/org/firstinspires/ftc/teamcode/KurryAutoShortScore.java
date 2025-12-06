@@ -9,12 +9,13 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @Autonomous(name = "KurryAutoShortScoreR", group = "Linear Opmode")
-public class KurryAutoShortScore extends LinearOpMode {
+public class KurryAutoShortScoreRed extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
@@ -33,6 +34,34 @@ public class KurryAutoShortScore extends LinearOpMode {
 
     static final double TICKS_PER_REV = 384.5;
     static final double TICKS_PER_INCH = TICKS_PER_REV / WHEEL_CIRCUMFERENCE;
+
+    private double          headingError  = 0;
+
+    // These variable are declared here (as class members) so they can be updated in various methods,
+    // but still be displayed by sendTelemetry()
+    private double  targetHeading = 0;
+    private double  driveSpeed    = 0;
+    private double  turnSpeed     = 0;
+    private double  leftSpeed     = 0;
+    private double  rightSpeed    = 0;
+    private int     leftTarget    = 0;
+    private int     rightTarget   = 0;
+
+    // Calculate the COUNTS_PER_INCH for your specific drive train.
+    // Go to your motor vendor website to determine your motor's COUNTS_PER_MOTOR_REV
+    // For external drive gearing, set DRIVE_GEAR_REDUCTION as needed.
+    // For example, use a value of 2.0 for a 12-tooth spur gear driving a 24-tooth spur gear.
+    // This is gearing DOWN for less speed and more torque.
+    // For gearing UP, use a gear ratio less than 1.0. Note this will affect the direction of wheel rotation.
+    static final double     COUNTS_PER_MOTOR_REV    = 537.7 ;   // eg: GoBILDA 312 RPM Yellow Jacket
+    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // No External Gearing.
+    static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     P_TURN_GAIN            = 0.02;     // Larger is more responsive, but also less stable.
+    static final double     P_DRIVE_GAIN           = 0.03;     // Larger is more responsive, but also less stable.
+
+    static final double TIMEOUT_SECONDS = 5.0;
 
     @Override
     public void runOpMode() {
@@ -57,15 +86,17 @@ public class KurryAutoShortScore extends LinearOpMode {
         imu.initialize(imuParameters);
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
         flapperRight.setDirection(Servo.Direction.REVERSE);
+        flapperLeft.setDirection(Servo.Direction.FORWARD);
         flapperRight.setPosition(0.22);
+        imu.resetYaw();
 
         waitForStart();
         resetEncoders();
@@ -74,34 +105,28 @@ public class KurryAutoShortScore extends LinearOpMode {
         launcherLeft.setPower(.40);
         launcherRight.setPower(.40);
         driveStraight(15, false);
-        turn(135,false);
-        driveStraight(15,true);
         launch(1);
-
-
-//        turn(90, true);
-//        turn(90,false);
-//        driveStraight(36, true);
-//        driveStraight(36, false);
-//        turn(90, false);
-//        driveStraight(18, false);
-//        turn(45, false);
-//        turn(45, true);
-//        driveStraight(12, true);
+        turnRelative(0.5,-45);
     }
     private void launch(double t){
         if(t==1){
-          flapperLeft.setPosition(0.3);
-          sleep(1000);
-          flapperLeft.setPosition(0.14);
-          sleep(1000);
-          flapperRight.setPosition(0.71);
-          sleep(1000);
-          flapperRight.setPosition(0.58);
-          sleep(1000);
-          flapperRight.setPosition(0.71);
-          sleep(1000);
-          flapperRight.setPosition(0.58);
+            flapperLeft.setPosition(0.3);
+            sleep(1000);
+            flapperLeft.setPosition(0.14);
+            sleep(1000);
+            flapperRight.setPosition(0.71);
+            sleep(1000);
+            flapperRight.setPosition(0.58);
+            sleep(1000);
+            divider.setPower(1);
+            sleep(2000);
+            flapperRight.setPosition(0.71);
+            sleep(1000);
+            flapperRight.setPosition(0.58);
+            sleep(1000);
+            flapperLeft.setPosition(0.3);
+            sleep(1000);
+            flapperLeft.setPosition(0.14);
 
 
         }
@@ -147,7 +172,6 @@ public class KurryAutoShortScore extends LinearOpMode {
         backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         setAllPower(DRIVE_SPEED);
-
         runtime.reset();
         while (opModeIsActive() &&
                 (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy()) &&
@@ -198,56 +222,204 @@ public class KurryAutoShortScore extends LinearOpMode {
         stopAll();
         sleep(100);
     }
-    private void turn(double angle, boolean isLeft) {
+    public void turnRelative(double maxTurnSpeed, double deltaAngle)
+    {
+        double targetHeading = AngleUnit.normalizeDegrees(getHeading()+deltaAngle);
+        turnToHeading(maxTurnSpeed,targetHeading);
+    }
 
-        // Starting absolute heading
-        double startHeading = getHeading();
+    /**
+     * Spin on the central axis to point in a new direction.
+     * <p>
+     * Move will stop if either of these conditions occur:
+     * <p>
+     * 1) Move gets to the heading (angle)
+     * <p>
+     * 2) Driver stops the OpMode running.
+     *
+     * @param maxTurnSpeed Desired MAX speed of turn. (range 0 to +1.0)
+     * @param heading Absolute Heading Angle (in Degrees) relative to last gyro reset.
+     * 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     * If a relative angle is required, add/subtract from current heading.
+     */
+    public void turnToHeading(double maxTurnSpeed, double heading) {
 
-        // Desired target heading
-        double targetHeading = normalizeAngle(startHeading + (isLeft ? angle : -angle));
+        // Run getSteeringCorrection() once to pre-calculate the current error
+        getSteeringCorrection(heading, P_DRIVE_GAIN);
 
-        // Turn until angle is reached
-        while (opModeIsActive()) {
+        ElapsedTime runtime = new ElapsedTime();
+        runtime.reset();
 
-            double current = getHeading();
-            double error = normalizeAngle(targetHeading - current);
+        // keep looping while we are still active, and not on heading.
+        while (opModeIsActive() && (Math.abs(headingError) > HEADING_THRESHOLD)
+                && runtime.seconds() < TIMEOUT_SECONDS) {
 
-            // ----- Stop condition -----
-            if (Math.abs(error) <= HEADING_THRESHOLD) break;
+            // Determine required steering to keep on heading
+            turnSpeed = getSteeringCorrection(heading, P_TURN_GAIN);
 
+            // Clip the speed to the maximum permitted value.
+            turnSpeed = Range.clip(turnSpeed, -maxTurnSpeed, maxTurnSpeed);
 
-            double kP = 0.015;     // Small value so it slows down smoothly
-            double speed = kP * error;
+            if(Math.abs(turnSpeed) < 0.05){
+                break;
+            }
 
+            // Pivot in place by applying the turning correction
+            // Pivot in place by applying the turning correction
+            moveRobot(0, turnSpeed);
 
-            speed = Math.max(Math.min(speed, TURN_SPEED), -TURN_SPEED);
+            // Display drive status for the driver.
+            sendTelemetry(false);
 
-            // Apply power to wheels
-            frontLeft.setPower(-speed);
-            backLeft.setPower(-speed);
-            frontRight.setPower(speed);
-            backRight.setPower(speed);
-
-            telemetry.addData("Heading", current);
-            telemetry.addData("Target", targetHeading);
-            telemetry.addData("Error", error);
-            telemetry.addData("Speed", speed);
-            telemetry.update();
         }
 
-        stopAll();
-        sleep(150);
+        // Stop all motion;
+        moveRobot(0, 0);
     }
 
+    /**
+     * Obtain & hold a heading for a finite amount of time
+     * <p>
+     * Move will stop once the requested time has elapsed
+     * <p>
+     * This function is useful for giving the robot a moment to stabilize its heading between movements.
+     *
+     * @param maxTurnSpeed      Maximum differential turn speed (range 0 to +1.0)
+     * @param heading    Absolute Heading Angle (in Degrees) relative to last gyro reset.
+     * 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     * If a relative angle is required, add/subtract from current heading.
+     * @param holdTime   Length of time (in seconds) to hold the specified heading.
+     */
+    public void holdHeading(double maxTurnSpeed, double heading, double holdTime) {
 
-    private double getHeading() {
-        YawPitchRollAngles yp = imu.getRobotYawPitchRollAngles();
-        return yp.getYaw(AngleUnit.DEGREES);
+        ElapsedTime holdTimer = new ElapsedTime();
+        holdTimer.reset();
+
+        // keep looping while we have time remaining.
+        while (opModeIsActive() && (holdTimer.time() < holdTime)) {
+            // Determine required steering to keep on heading
+            turnSpeed = getSteeringCorrection(heading, P_TURN_GAIN);
+
+            // Clip the speed to the maximum permitted value.
+            turnSpeed = Range.clip(turnSpeed, -maxTurnSpeed, maxTurnSpeed);
+
+            // Pivot in place by applying the turning correction
+            moveRobot(0, turnSpeed);
+
+            // Display drive status for the driver.
+            sendTelemetry(false);
+        }
+
+        // Stop all motion;
+        moveRobot(0, 0);
     }
 
-    private double normalizeAngle(double angle) {
-        while (angle > 180) angle -= 360;
-        while (angle <= -180) angle += 360;
-        return angle;
+    // ********** LOW Level driving functions.  ********************
+
+    /**
+     * Use a Proportional Controller to determine how much steering correction is required.
+     *
+     * @param desiredHeading        The desired absolute heading (relative to last heading reset)
+     * @param proportionalGain      Gain factor applied to heading error to obtain turning power.
+     * @return                      Turning power needed to get to required heading.
+     */
+    public double getSteeringCorrection(double desiredHeading, double proportionalGain) {
+        double currentHeading = getHeading();
+
+        targetHeading = desiredHeading;  // Save for telemetry
+
+        // Determine the heading current error
+
+        double error = AngleUnit.normalizeDegrees(desiredHeading-currentHeading);
+        headingError =  error;
+
+        // Multiply the error by the gain to determine the required steering correction/  Limit the result to +/- 1.0
+        double steer =  Range.clip(headingError * proportionalGain, -1, 1);
+        return steer;
+    }
+
+    /**
+     * Take separate drive (fwd/rev) and turn (right/left) requests,
+     * combines them, and applies the appropriate speed commands to the left and right wheel motors.
+     * @param drive forward motor speed
+     * @param turn  clockwise turning motor speed.
+     */
+    public void moveRobot(double drive, double turn) {
+        driveSpeed = drive; // Save for telemetry
+        turnSpeed  = turn;  // Save for telemetry
+
+        // Mecanum Kinematics for Y-Drive and T-Turn (assuming no strafe X=0):
+        // All motors on the left side spin the same way for turning.
+        // All motors on the right side spin the opposite way for turning.
+        double frontLeftPower = drive + turn;
+        double frontRightPower = drive - turn;
+        double backLeftPower = drive + turn;
+        double backRightPower = drive - turn;
+
+        // Scale speeds down if any one exceeds +/- 1.0;
+        double max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
+        max = Math.max(max, Math.abs(backLeftPower));
+        max = Math.max(max, Math.abs(backRightPower));
+
+        if (max > 1.0)
+        {
+            frontLeftPower /= max;
+            frontRightPower /= max;
+            backLeftPower /= max;
+            backRightPower /= max;
+        }
+
+        // Apply power to all four motors!
+        frontLeft.setPower(frontLeftPower);
+        frontRight.setPower(frontRightPower);
+        backLeft.setPower(backLeftPower);
+        backRight.setPower(backRightPower);
+
+        // Retain leftSpeed/rightSpeed for existing telemetry
+        leftSpeed = frontLeftPower;
+        rightSpeed = frontRightPower;
+    }
+
+    /**
+     * Display the various control parameters while driving
+     *
+     * @param straight  Set to true if we are driving straight, and the encoder positions should be included in the telemetry.
+     */
+    private void sendTelemetry(boolean straight) {
+
+        if (straight) {
+            telemetry.addData("Motion", "Drive Straight");
+            telemetry.addData("Target Pos L:R",  "%7d:%7d",      leftTarget,  rightTarget);
+            // Show the current position of the front motors
+            telemetry.addData("Actual Pos LF:RF",  "%7d:%7d",      frontLeft.getCurrentPosition(),
+                    frontRight.getCurrentPosition());
+        } else {
+            telemetry.addData("Motion", "Turning");
+        }
+
+        telemetry.addData("Heading- Target : Current", "%5.2f : %5.0f", targetHeading, getHeading());
+        telemetry.addData("Error  ",  "%5.1f", headingError);
+        telemetry.addData("Turn SPeed Power ", "%5.1f",turnSpeed);
+        telemetry.addData("Wheel Speeds L : R", "%5.2f : %5.2f", leftSpeed, rightSpeed);
+        telemetry.update();
+    }
+
+    /**
+     * read the Robot heading directly from the IMU (in degrees)
+     */
+    public double getHeading() {
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getYaw(AngleUnit.DEGREES);
+    }
+
+    public double getPitch(){
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getPitch(AngleUnit.DEGREES);
+    }
+
+    public double getRoll()
+    {
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        return orientation.getRoll(AngleUnit.DEGREES);
     }
 }
