@@ -64,8 +64,8 @@ public class KurryAutoShortScore extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         // Switched  Launcher left and right to compensate for robot
 
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
+        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
 
 
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -176,7 +176,6 @@ public class KurryAutoShortScore extends LinearOpMode {
         setAllPower(0);
     }
 
-    // ---------- DRIVE STRAIGHT ----------
     private void driveStraight(double inches, boolean isForward) {
         int move = (int)(inches * TICKS_PER_INCH);
         if (!isForward) move = -move;
@@ -244,6 +243,68 @@ public class KurryAutoShortScore extends LinearOpMode {
         stopAll();
         sleep(100);
     }
+
+
+    public void turnTo(double targetAngleDeg) {
+        double KpFar = 0.025;   // gain when far away (> 25°)
+        double KpNear = 0.015;  // gain when near (< 25°)
+        double minSpeed = 0.10; // always enough power to actually rotate
+        double maxSpeed = 0.60; // limit turning speed
+
+        double error;
+        double power;
+        double currentHeading;
+
+        ElapsedTime timer = new ElapsedTime();
+
+        timer.reset();
+        while (opModeIsActive() && timer.seconds() < 4.0) {
+
+            currentHeading = getHeading();
+            error = AngleUnit.normalizeDegrees(targetAngleDeg - currentHeading);
+
+            // Stop early if very close
+            if (Math.abs(error) < 0.5) {
+                break;
+            }
+
+            // Use stronger gain if far away
+            double Kp = Math.abs(error) > 25 ? KpFar : KpNear;
+
+            power = Kp * error;
+
+            // Apply constraints
+            power = Range.clip(power, -maxSpeed, maxSpeed);
+
+            // Guarantee minimum usable power
+            if (Math.abs(power) < minSpeed) {
+                power = minSpeed * Math.signum(power);
+            }
+
+            // Apply power (pivot turn)
+            frontLeft.setPower(power);
+            backLeft.setPower(power);
+            frontRight.setPower(-power);
+            backRight.setPower(-power);
+
+            telemetry.addData("Turning To", targetAngleDeg);
+            telemetry.addData("Current", currentHeading);
+            telemetry.addData("Error", error);
+            telemetry.addData("Power", power);
+            telemetry.update();
+        }
+
+        stopAll();  // clean stop
+        sleep(80);  // stabilize
+    }
+
+
+    // Turns relative to current heading
+    public void turnDegrees(double degrees) {
+        double absolute = AngleUnit.normalizeDegrees(getHeading() + degrees);
+        turnTo(absolute);
+    }
+
     public void turnRelative(double maxTurnSpeed, double deltaAngle)
     {
         double targetHeading = AngleUnit.normalizeDegrees(getHeading()+deltaAngle);

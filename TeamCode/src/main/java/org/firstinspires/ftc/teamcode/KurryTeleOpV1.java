@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -45,8 +46,9 @@ public class KurryTeleOpV1 extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
+        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
+
         intake = hardwareMap.get(DcMotor.class, "intake");
         flapperLeft = hardwareMap.get(Servo.class, "fl");
         flapperRight = hardwareMap.get(Servo.class, "fr");
@@ -58,8 +60,10 @@ public class KurryTeleOpV1 extends LinearOpMode {
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
-        launcherLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        launcherRight.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        launcherLeft.setDirection(DcMotor.Direction.REVERSE);
+        launcherRight.setDirection(DcMotor.Direction.FORWARD);
 
         // Servo directions
         flapperLeft.setDirection(Servo.Direction.REVERSE);
@@ -104,12 +108,12 @@ public class KurryTeleOpV1 extends LinearOpMode {
             double powerR = 0;
             double powerL = 0;
 
-            if (gamepad2.left_trigger> 0.2) powerR = 0.4;
-            if (gamepad2.right_trigger>0.2) powerL = 0.5;
-            if (gamepad2.right_bumper) powerL = leftLauncherPowerMID;
-            if (gamepad2.left_bumper) powerR = rightLauncherPowerMID;
-            if (gamepad2.y) powerL = leftLauncherXC;
-            if (gamepad2.dpad_up) powerR = rightLauncherXC;
+            if (gamepad2.right_trigger> 0.2) powerR = 0.4;
+            if (gamepad2.left_trigger>0.2) powerL = 0.5;
+            if (gamepad2.left_bumper) powerL = leftLauncherPowerMID;
+            if (gamepad2.right_bumper) powerR = rightLauncherPowerMID;
+            if (gamepad2.dpad_up) powerL = leftLauncherXC;
+            if (gamepad2.y) powerR = rightLauncherXC;
 
             launcherRight.setPower(powerR);
             launcherLeft.setPower(powerL);
