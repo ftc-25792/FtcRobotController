@@ -14,9 +14,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "--KurryAutoShortScore", group = "Linear Opmode")
-public class KurryAutoShortScore extends LinearOpMode {
-
+@Autonomous(name = "--KurryAutolongShoot", group = "Linear Opmode")
+public class KurryAutoLongShoot extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
@@ -62,6 +61,10 @@ public class KurryAutoShortScore extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
+
+
+
+
         // Switched  Launcher left and right to compensate for robot
 
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight");
@@ -105,19 +108,15 @@ public class KurryAutoShortScore extends LinearOpMode {
 
         waitForStart();
         resetEncoders();
-
-        // Your autonomous path (unchanged)
-        launcherLeft.setPower(0.42);
-        launcherRight.setPower(0.52);
-
-        driveStraight(17, false);
+        launcherLeft.setPower(1);
+        launcherRight.setPower(1);
+        driveStraight(2, true);
         launch(1);
-
-        strafing(20,false);
+        driveStraight(8,true);
     }
     private void launch(double t){
         if(t==1){
-            sleep(2500);
+            sleep(3000);
             strafing(3,true);
             rightLaunch();
             sleep(500);
