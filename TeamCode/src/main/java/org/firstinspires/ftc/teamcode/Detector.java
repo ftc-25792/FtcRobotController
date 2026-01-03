@@ -1,41 +1,29 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.*;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
-
-@Autonomous(name = "Ball Order Test", group = "Testing")
+@TeleOp(name = "AprilTag Quick Test", group = "Test")
 public class Detector extends LinearOpMode {
 
-    private BallOrderDetector detector;
+    private AprilTagHelper aprilTagHelper;
 
     @Override
     public void runOpMode() {
 
-        detector = new BallOrderDetector(hardwareMap);
+        // get the helper
+        aprilTagHelper = new AprilTagHelper(hardwareMap);
 
-        sleep(1000);
-
-        while (!isStarted() && !isStopRequested()) {
-            telemetry.addData("Ball Order", detector.getBallOrder());
-            telemetry.update();
-        }
+        telemetry.addLine("AprilTag Helper Initialized");
+        telemetry.update();
 
         waitForStart();
 
-        telemetry.addData("FINAL Ball Order", detector.getBallOrder());
-        telemetry.update();
+        while (opModeIsActive()) {
 
-        detector.stop();
+            aprilTagHelper.telemetryAprilTag(telemetry);
+            telemetry.update();
+        }
+        aprilTagHelper.stop();
     }
 }
