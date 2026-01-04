@@ -13,10 +13,35 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
 import java.util.List;
 
-@Autonomous(name = "--KurryAutoShootTT", group = "Linear Opmode")
-public class KurryAutoShortScore extends LinearOpMode {
+@Autonomous(name = "--KurryAutoShortStateMachine", group = "Linear Opmode")
+public class KurryAutoShortStateMachine extends LinearOpMode {
+enum KurryState{
+    eFind_MOTIF,
+    eConfirm_MOTIF,
+    eFind_POST,
+    eAlign_POST,
+    eLaunch,
+    eFind_More_Artifacts,
+    ePICKUP,
+    ePark
+};
+    private KurryState CurrentState = KurryState.eFind_POST;// KurryState.eFind_MOTIF;
+    private int MotifID = 21;
+    private boolean findMotif = false, findPost = false;
+    private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag,PostTag;
+
+    private final int RedPost = 24, BluePost = 20;
+
+    private ElapsedTime stateTimer = new ElapsedTime();
+    private boolean targetHeadingInit = false;
+    private double targetHeading = 0;
+
+    private double fallbackLaunchHeading = 0.0;
+
+    static final double Align_POST_Timeout = 3000; // milliseconds before we give up
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
@@ -30,11 +55,11 @@ public class KurryAutoShortScore extends LinearOpMode {
 
     private static final double DRIVE_SPEED = 0.5;
     private static final double TURN_SPEED = 0.5;
-    private static final double HEADING_THRESHOLD = 1.0;
+    private static final double HEADING_THRESHOLD = 3.0; // init was 1 checking 3 now
     private static final double TICKS_PER_INCH = 537.7 / (Math.PI * 4); // 4" wheels, 537.7 ticks/rev
 
     // Telemetry variables
-    private double targetHeading = 0;
+
     private double driveSpeed = 0;
     private double turnSpeed = 0;
     private double leftSpeed = 0;
@@ -49,18 +74,187 @@ public class KurryAutoShortScore extends LinearOpMode {
     static final double     P_TURN_GAIN            = 0.02;     // Larger is more responsive, but also less stable.
     static final double     P_DRIVE_GAIN           = 0.03;     // Larger is more responsive, but also less stable.
 
+    static final double MAX_TURN_SPEED = 0.2;
+    static boolean findMOTIFStrafing = true;
     static final double TIMEOUT_SECONDS = 5.0;
 
     @Override
     public void runOpMode() {
 
+        InitializeMotorServosEverything();
+
+        waitForStart();
+
+        while(opModeIsActive())
+        {
+            TelemetryRobotState();
+            switch(CurrentState){
+                case eFind_MOTIF:
+                {
+                    if(findMOTIFStrafing) {
+                        strafing(36, true);
+                        findMOTIFStrafing = false;
+                    }
+                    List detections = aprilTagHelper.getDetections();
+                    //while(detections.isEmpty()){
+                        aprilTagHelper.telemetryAprilTag(telemetry);
+                        telemetry.update();
+                        detections = aprilTagHelper.getDetections();
+                    //}
+                    if(!detections.isEmpty())
+                    {
+                        MotifID= ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
+                        MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
+                        CurrentState = KurryState.eConfirm_MOTIF;
+                        break;
+                    }
+                    driveStraight(1,false);
+                }
+
+                    break;
+                case eConfirm_MOTIF:
+                    sleep(500);
+                    List detections;
+                    aprilTagHelper.telemetryAprilTag(telemetry);
+                    telemetry.update();
+                    detections = aprilTagHelper.getDetections();
+                    if(((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
+                        CurrentState = KurryState.eFind_POST;
+                        findMotif = true;
+
+                    }
+                    else {
+                        CurrentState = KurryState.eFind_MOTIF;
+                    }
+                    break;
+
+                case eFind_POST:
+                    setMotorsNOTUsingEncoders();
+                    turnRelative(0.1,4,1000);
+                    detections = aprilTagHelper.getDetections();
+                    aprilTagHelper.telemetryAprilTag(telemetry);
+                    telemetry.update();
+                    if(!detections.isEmpty()  ){// && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == RedPost){
+                        org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+
+                        PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
+                        CurrentState = KurryState.eAlign_POST;
+                        findPost = true;
+                        break;
+                    }
+                    break;
+                case eAlign_POST:
+                    AlignPost();
+
+                    break;
+                case eLaunch:
+                    launch(MotifID);
+                    CurrentState = KurryState.eFind_More_Artifacts;
+                    break;
+                case ePICKUP:
+                    break;
+                case ePark:
+                    break;
+                case eFind_More_Artifacts:
+                    break;
+            }
+        }
+        sleep(500);
+
+        // Stop camera
+        aprilTagHelper.stop();
+    }
+
+    private void AlignPost() {
+        if(!targetHeadingInit)
+        {
+            // Reset timer so we can timeout if tag doesnt align in time
+            stateTimer.reset();
+            targetHeadingInit = true;
+
+            // Compute Absolute Heading target once
+            double currentHeading = getHeading();
+            if(PostTag != null) {
+                double tagYAWDeg = Math.toDegrees(PostTag.ftcPose.yaw);
+                double offset = 10+  90; // left side of the tag ??
+                // double offset = 0 +10 -90 ; // right side of the tag
+                targetHeading = AngleUnit.normalizeDegrees(currentHeading + tagYAWDeg + offset);
+
+                telemetry.addData("Target , TagyAW , current heading ","%5.2f %5.3f %5.2f",targetHeading,tagYAWDeg,currentHeading);
+                telemetry.update();
+                sleep(3000);
+            }
+            else {
+                // fallback heading if no Post Tag
+                telemetry.addLine("fallback ");
+                telemetry.update();
+                sleep(3000);
+                targetHeading = fallbackLaunchHeading;
+            }
+            setMotorsNOTUsingEncoders();
+        }
+        double currentHeading = getHeading();
+        double headingError = AngleUnit.normalizeDegrees(targetHeading-currentHeading);
+
+        // if within threshold, move to next state
+        if(Math.abs(headingError) <= HEADING_THRESHOLD){
+            moveRobot(0,0);
+            targetHeadingInit = false;
+            CurrentState = KurryState.eLaunch;
+            telemetry.addLine("heading reached");
+            telemetry.update();
+            sleep(3000);
+            return;
+        }
+        // if we gave taken too long,fallback
+        if(stateTimer.milliseconds() > Align_POST_Timeout)
+        {
+            moveRobot(0,0);
+            targetHeadingInit = false;
+            CurrentState = KurryState.eLaunch;
+            telemetry.addLine("timeout ");
+            telemetry.update();
+            sleep(3000);
+            return;
+        }
+        // Lets turn and align
+        double turnSpeed = Range.clip(headingError * P_TURN_GAIN, -MAX_TURN_SPEED, MAX_TURN_SPEED);
+        moveRobot(0,turnSpeed);
+
+        sendTelemetry(false);
+
+    }
+
+    private void TelemetryRobotState() {
+        telemetry.addData("current state is ",CurrentState);
+
+        if(findMotif)
+            telemetry.addLine("Seen Motif Yes") ;
+        else
+            telemetry.addLine("Seen Motif NO");
+        if(findPost)
+            telemetry.addLine("Seen Post Yes");
+        else
+            telemetry.addLine("Seen Post NO");
+
+        telemetry.addData("Pattern ", MotifID);
+        telemetry.update();
+    }
+
+    private void InitializeMotorServosEverything() {
         // ===== Initialize Motors & Servos =====
+
+
+        findMOTIFStrafing = true;
+        targetHeadingInit = false;
+
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight"); // swapped intentionally
+        launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         launcherRight.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -89,63 +283,11 @@ public class KurryAutoShortScore extends LinearOpMode {
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
 
-        resetEncoders();
+        setMotorsUsingEncoders();
 
-        waitForStart();
-
-
-
-
-    telemetryIMU();
-
-  /*  driveStraight(36, false);
-    sleep(2500); */
-
-        strafing(24,true);
-
-    telemetryIMU();
-
-    //turnRelative(0.2, -90, 10500);
-
-    telemetryIMU();
-
-
-    List detections = aprilTagHelper.getDetections();
-    while (detections.isEmpty()) {
-        aprilTagHelper.telemetryAprilTag(telemetry);
+        aprilTagHelper = new AprilTagHelper(hardwareMap);
+        telemetry.addLine("AprilTag Helper initialized...");
         telemetry.update();
-        detections = aprilTagHelper.getDetections();
-        // sleep(1000);
-
-    }
-    telemetry.addLine("outside while");
-    telemetry.update();
-    sleep(1000);
-    {
-        int id = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
-        switch (id) {
-            case 21:
-                pattern = "GPP";
-                break;
-            case 22:
-                pattern = "PGP";
-                break;
-            case 23:
-                pattern = "PPG";
-                break;
-        }
-        telemetry.addData("Pattern detected", pattern);
-        telemetry.update();
-    }
-
-imu.resetYaw();
-        turnRelative(0.4,90,5000);
-//        driveStraight(2, true);        // move into shooting position
-    launch(pattern);               // shoot according to pattern
-//        driveStraight(8, true);        // continue autonomous
-
-        // Stop camera
-        aprilTagHelper.stop();
     }
 
     private void telemetryIMU() {
@@ -154,7 +296,7 @@ imu.resetYaw();
         sleep(2000);
     }
 
-    private void launch(String pattern) {
+    private void launch(int pattern) {
 
         launcherLeft.setPower(0.5);
         launcherRight.setPower(0.5);
@@ -165,21 +307,21 @@ imu.resetYaw();
         sleep(500);
 
         switch (pattern) {
-            case "PPG":
+            case 23:
                 rightLaunch();
                 divide();
                 rightLaunch();
                 leftLaunch();
 
                 break;
-            case "PGP":
+            case 22:
 //                sleep(1000);
                 rightLaunch();
                 leftLaunch();
                 divide();
                 rightLaunch();
                 break;
-            case "GPP":
+            case 21:
 //                sleep(1000);
                 leftLaunch();
                 rightLaunch();
@@ -217,7 +359,7 @@ imu.resetYaw();
         sleep(1000);
     }
 
-    private void resetEncoders() {
+    private void setMotorsUsingEncoders() {
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -227,6 +369,13 @@ imu.resetYaw();
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    private void setMotorsNOTUsingEncoders(){
+        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     private void setAllPower(double p) {
@@ -244,7 +393,7 @@ imu.resetYaw();
         int move = (int) (inches * TICKS_PER_INCH);
         if (!forward) move = -move;
 
-        resetEncoders();
+        setMotorsUsingEncoders();
         frontLeft.setTargetPosition(move);
         frontRight.setTargetPosition(move);
         backLeft.setTargetPosition(move);
@@ -271,7 +420,7 @@ imu.resetYaw();
         double correction = 1.12;
         int move = (int) (inches * TICKS_PER_INCH * correction);
 
-        resetEncoders();
+        setMotorsUsingEncoders();
 
         if (left) {
             frontLeft.setTargetPosition(-move);
