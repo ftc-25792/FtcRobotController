@@ -16,19 +16,19 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--KurryAutoShortStateMachine", group = "Linear Opmode")
+@Autonomous(name = "--KurryAutoShortStateMachineTTTT", group = "Linear Opmode")
 public class KurryAutoShortStateMachine extends LinearOpMode {
-enum KurryState{
-    eFind_MOTIF,
-    eConfirm_MOTIF,
-    eFind_POST,
-    eAlign_POST,
-    eLaunch,
-    eFind_More_Artifacts,
-    ePICKUP,
-    ePark
-};
-    private KurryState CurrentState = KurryState.eFind_POST;// KurryState.eFind_MOTIF;
+    enum KurryState{
+        eFind_MOTIF,
+        eConfirm_MOTIF,
+        eFind_POST,
+        eAlign_POST,
+        eLaunch,
+        eFind_More_Artifacts,
+        ePICKUP,
+        ePark
+    };
+    private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
     private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag,PostTag;
@@ -76,6 +76,7 @@ enum KurryState{
 
     static final double MAX_TURN_SPEED = 0.2;
     static boolean findMOTIFStrafing = true;
+    static boolean findPostOneTime = true;
     static final double TIMEOUT_SECONDS = 5.0;
 
     @Override
@@ -92,26 +93,27 @@ enum KurryState{
                 case eFind_MOTIF:
                 {
                     if(findMOTIFStrafing) {
-                        strafing(36, true);
+                        driveStraight(4,false);
+                        strafing(24, true);
                         findMOTIFStrafing = false;
                     }
                     List detections = aprilTagHelper.getDetections();
                     //while(detections.isEmpty()){
-                        aprilTagHelper.telemetryAprilTag(telemetry);
-                        telemetry.update();
-                        detections = aprilTagHelper.getDetections();
+                    aprilTagHelper.telemetryAprilTag(telemetry);
+                    telemetry.update();
+                    detections = aprilTagHelper.getDetections();
                     //}
                     if(!detections.isEmpty())
                     {
                         MotifID= ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
                         MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eConfirm_MOTIF;
+                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF;
                         break;
                     }
                     driveStraight(1,false);
                 }
 
-                    break;
+                break;
                 case eConfirm_MOTIF:
                     sleep(500);
                     List detections;
@@ -129,12 +131,20 @@ enum KurryState{
                     break;
 
                 case eFind_POST:
-                    setMotorsNOTUsingEncoders();
+
+
+                    if (findPostOneTime )
+                    {
+                        driveStraight(15, false);
+                        setMotorsNOTUsingEncoders();
+                        turnRelative(0.2, 45, 1000);
+                        findPostOneTime = false;
+                    }
                     turnRelative(0.1,4,1000);
                     detections = aprilTagHelper.getDetections();
                     aprilTagHelper.telemetryAprilTag(telemetry);
                     telemetry.update();
-                    if(!detections.isEmpty()  ){// && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == RedPost){
+                    if(!detections.isEmpty()  && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == RedPost){
                         org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
 
                         PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
@@ -219,7 +229,7 @@ enum KurryState{
         }
         // Lets turn and align
         double turnSpeed = Range.clip(headingError * P_TURN_GAIN, -MAX_TURN_SPEED, MAX_TURN_SPEED);
-        moveRobot(0,turnSpeed);
+        moveRobot(0.2,turnSpeed);
 
         sendTelemetry(false);
 
@@ -246,6 +256,7 @@ enum KurryState{
 
 
         findMOTIFStrafing = true;
+        findPostOneTime = true;
         targetHeadingInit = false;
 
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
@@ -634,6 +645,7 @@ enum KurryState{
             telemetry.addData("Motion", "Turning");
         }
 
+
         telemetry.addData("Heading- Target : Current", "%5.2f : %5.0f", targetHeading, getHeading());
         telemetry.addData("Error  ",  "%5.1f", headingError);
         telemetry.addData("Turn SPeed Power ", "%5.1f",turnSpeed);
@@ -649,14 +661,21 @@ enum KurryState{
         return orientation.getYaw(AngleUnit.DEGREES);
     }
 
+
     public double getPitch(){
+
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+
         return orientation.getPitch(AngleUnit.DEGREES);
+
     }
 
     public double getRoll()
+
     {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+
         return orientation.getRoll(AngleUnit.DEGREES);
+
     }
 }
