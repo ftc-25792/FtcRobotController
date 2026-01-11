@@ -28,6 +28,12 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         ePICKUP,
         ePark
     };
+    enum Alliance {
+        eBlue,
+        eRed
+    };
+
+    Alliance alliance = Alliance.eRed;
 
     private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
@@ -85,6 +91,21 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
         InitializeMotorServosEverything();
 
+        while(!isStarted() && !isStopRequested()){
+           if (gamepad1.x)
+           {
+               alliance = Alliance.eRed;
+           }
+
+           if(gamepad1.cross)
+           {
+               alliance = Alliance.eBlue;
+           }
+
+           telemetry.addData("Alliance ", alliance);
+           telemetry.update();
+        }
+
         waitForStart();
 
         while(opModeIsActive())
@@ -136,6 +157,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
                     if (findPostOneTime )
                     {
+                        setMotorsUsingEncoders();
                         driveStraight(15, false);
                         setMotorsNOTUsingEncoders();
                         turnRelative(0.2, 45, 1000);
@@ -152,7 +174,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
 
                         PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eAlign_POST;
+                        CurrentState = KurryState.eLaunch;
                         findPost = true;
                         break;
                     }
@@ -227,7 +249,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             return;
         }
         // if we gave taken too long,fallback
-        if(stateTimer.milliseconds() > Align_POST_Timeout)
+        if(stateTimer.milliseconds() > Align_POST_Timeout )
         {
             moveRobot(0,0);
             targetHeadingInit = false;
@@ -274,9 +296,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight"); // swapped intentionally
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
+        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         launcherRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
@@ -354,7 +375,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                 rightLaunch();
                 break;
         }
-
+        strafing(15,false);
         divider.setPower(0);
         intake.setPower(0);
         launcherLeft.setPower(0);
@@ -429,7 +450,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         runtime.reset();
         while (opModeIsActive() &&
                 (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy()) &&
-                runtime.seconds() < 5) {
+                runtime.seconds() < 3) {
             telemetry.addData("Driving", inches);
             telemetry.update();
         }
