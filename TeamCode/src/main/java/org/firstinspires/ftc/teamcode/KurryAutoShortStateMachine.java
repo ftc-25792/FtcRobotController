@@ -28,6 +28,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         ePICKUP,
         ePark
     };
+
     private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
@@ -41,8 +42,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     private double fallbackLaunchHeading = 0.0;
 
-    static final double Align_POST_Timeout = 3000; // milliseconds before we give up
-
+    static final double Align_POST_Timeout = 2000;// milliseconds before we give up
+    static final double fing_Post_Timeout = 2000;
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
@@ -139,6 +140,9 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         setMotorsNOTUsingEncoders();
                         turnRelative(0.2, 45, 1000);
                         findPostOneTime = false;
+
+                        stateTimer.reset();
+
                     }
                     turnRelative(0.1,4,1000);
                     detections = aprilTagHelper.getDetections();
@@ -150,6 +154,12 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
                         CurrentState = KurryState.eAlign_POST;
                         findPost = true;
+                        break;
+                    }
+                    if(stateTimer.milliseconds() >= fing_Post_Timeout)
+                    {
+                        CurrentState = KurryState.eLaunch;
+                        findPost = false;
                         break;
                     }
                     break;
@@ -186,19 +196,19 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             double currentHeading = getHeading();
             if(PostTag != null) {
                 double tagYAWDeg = Math.toDegrees(PostTag.ftcPose.yaw);
-                double offset = 10+  90; // left side of the tag ??
+                double offset = 10;
                 // double offset = 0 +10 -90 ; // right side of the tag
                 targetHeading = AngleUnit.normalizeDegrees(currentHeading + tagYAWDeg + offset);
 
                 telemetry.addData("Target , TagyAW , current heading ","%5.2f %5.3f %5.2f",targetHeading,tagYAWDeg,currentHeading);
                 telemetry.update();
-                sleep(3000);
+                sleep(500);
             }
             else {
                 // fallback heading if no Post Tag
                 telemetry.addLine("fallback ");
                 telemetry.update();
-                sleep(3000);
+                sleep(500);
                 targetHeading = fallbackLaunchHeading;
             }
             setMotorsNOTUsingEncoders();
@@ -213,7 +223,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             CurrentState = KurryState.eLaunch;
             telemetry.addLine("heading reached");
             telemetry.update();
-            sleep(3000);
+            sleep(500);
             return;
         }
         // if we gave taken too long,fallback
