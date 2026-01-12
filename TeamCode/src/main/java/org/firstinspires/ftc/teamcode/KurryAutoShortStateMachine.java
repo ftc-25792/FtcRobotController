@@ -340,8 +340,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     private void launch(int pattern) {
 
-        launcherLeft.setPower(0.5);
-        launcherRight.setPower(0.5);
+        launcherLeft.setPower(0.7);
+        launcherRight.setPower(0.7);
         sleep(1000);
 
         divider.setPower(1);
