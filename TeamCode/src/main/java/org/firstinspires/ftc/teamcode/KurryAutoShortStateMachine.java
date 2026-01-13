@@ -35,6 +35,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     Alliance alliance = Alliance.eRed;
 
+    static double SIGN_Alliance= 1;
+
     private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
@@ -91,22 +93,24 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
         InitializeMotorServosEverything();
 
-        while(!isStarted() && !isStopRequested()){
-           if (gamepad1.x)
-           {
-               alliance = Alliance.eRed;
-           }
+        while (!isStarted() && !isStopRequested()) {
+            if (gamepad1.x) {
+                alliance = Alliance.eRed;
+            }
 
-           if(gamepad1.cross)
-           {
-               alliance = Alliance.eBlue;
-           }
+            if (gamepad1.cross) {
+                alliance = Alliance.eBlue;
+            }
 
-           telemetry.addData("Alliance ", alliance);
-           telemetry.update();
+            telemetry.addData("Alliance ", alliance);
+            telemetry.update();
         }
 
         waitForStart();
+
+        if (alliance == Alliance.eBlue){
+            SIGN_Alliance = -1;
+        }
 
         while(opModeIsActive())
         {
@@ -116,7 +120,12 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                 {
                     if(findMOTIFStrafing) {
                         driveStraight(4,false);
-                        strafing(24, true);
+                        if(alliance == Alliance.eRed) {
+                            strafing(24, true);
+                        }
+                        else {
+                            strafing(24, false);
+                        }
                         findMOTIFStrafing = false;
                     }
                     List detections = aprilTagHelper.getDetections();
@@ -145,7 +154,6 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     if(((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
                         CurrentState = KurryState.eFind_POST;
                         findMotif = true;
-
                     }
                     else {
                         CurrentState = KurryState.eFind_MOTIF;
@@ -160,13 +168,13 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         setMotorsUsingEncoders();
                         driveStraight(15, false);
                         setMotorsNOTUsingEncoders();
-                        turnRelative(0.2, 45, 1000);
+
+                        turnRelative(0.2, SIGN_Alliance * 45, 1000);
                         findPostOneTime = false;
-
                         stateTimer.reset();
-
                     }
-                    turnRelative(0.1,4,1000);
+
+                    turnRelative(0.1, SIGN_Alliance* 4,1000);
                     detections = aprilTagHelper.getDetections();
                     aprilTagHelper.telemetryAprilTag(telemetry);
                     telemetry.update();
@@ -187,7 +195,6 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     break;
                 case eAlign_POST:
                     AlignPost();
-
                     break;
                 case eLaunch:
                     launch(MotifID);
