@@ -26,7 +26,9 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         eLaunch,
         eFind_More_Artifacts,
         ePICKUP,
-        ePark
+        ePark,
+        GetBackToSho
+
     };
     enum Alliance {
         eBlue,
@@ -94,11 +96,11 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         InitializeMotorServosEverything();
 
         while (!isStarted() && !isStopRequested()) {
-            if (gamepad1.x) {
+            if (gamepad1.b) {
                 alliance = Alliance.eRed;
             }
 
-            if (gamepad1.cross) {
+            if (gamepad1.x) {
                 alliance = Alliance.eBlue;
             }
 
@@ -119,7 +121,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                 case eFind_MOTIF:
                 {
                     if(findMOTIFStrafing) {
-                        driveStraight(4,false);
+                        driveStraight(1,false);
                         if(alliance == Alliance.eRed) {
                             strafing(24, true);
                         }
@@ -168,7 +170,6 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         setMotorsUsingEncoders();
                         driveStraight(15, false);
                         setMotorsNOTUsingEncoders();
-
                         turnRelative(0.2, SIGN_Alliance * 45, 1000);
                         findPostOneTime = false;
                         stateTimer.reset();
@@ -201,10 +202,27 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     CurrentState = KurryState.eFind_More_Artifacts;
                     break;
                 case ePICKUP:
+
+                    Sort(1);
+                    CurrentState = KurryState.GetBackToSho;
+                    
+
+                    break;
+                case GetBackToSho:
+                    BackToShoot();
+                    CurrentState = KurryState.eLaunch;
+
                     break;
                 case ePark:
                     break;
                 case eFind_More_Artifacts:
+                    turnRelative(0.3,45,2000);
+                    if(alliance == Alliance.eRed) {
+                        strafing(20, false);
+                    }
+                    else {
+                        strafing(20, true);
+                    }
                     break;
             }
         }
@@ -213,7 +231,26 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         // Stop camera
         aprilTagHelper.stop();
     }
-
+    private void BackToShoot(){
+        driveStraight(21,false);
+        if (alliance == Alliance.eRed){
+            strafing(20,true);
+        }else {
+            strafing(20,false);
+        }
+        turnRelative(0.3,45*SIGN_Alliance,2000);
+    }
+    private void Sort(double order){
+        intake.setPower(0.767);
+        if(order == 1){
+            driveStraight(10,true);
+            divider.setPower(1);
+            driveStraight(5,true);
+            divider.setPower(-1);
+            driveStraight(6,true);
+            divider.setPower(0);
+        }
+    }
     private void AlignPost() {
         if(!targetHeadingInit)
         {
@@ -506,14 +543,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     }
 
     /**
-     * Spin on the central axis to point in a new direction.
-     * <p>
-     * Move will stop if either of these conditions occur:
-     * <p>
-     * 1) Move gets to the heading (angle)
-     * <p>
-     * 2) Driver stops the OpMode running.
-     *
+
      * @param maxTurnSpeed Desired MAX speed of turn. (range 0 to +1.0)
      * @param heading      Absolute Heading Angle (in Degrees) relative to last gyro reset.
      *                     0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
