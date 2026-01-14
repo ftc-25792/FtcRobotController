@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "--KURRY TeleOp", group = "Linear Opmode")
-public class KurryTeleOpV1 extends LinearOpMode {
+public class KurryTeleOpFinal extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private Servo flapperLeft, flapperRight;
