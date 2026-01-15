@@ -55,10 +55,11 @@ public class KurryTeleOpFinal extends LinearOpMode {
         servoWheel = hardwareMap.get(CRServo.class, "sw");
 
         // Motor directions
-        frontLeft.setDirection(DcMotor.Direction.FORWARD);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
-
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
         frontRight.setDirection(DcMotor.Direction.FORWARD);
+
+
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.FORWARD);
 
 

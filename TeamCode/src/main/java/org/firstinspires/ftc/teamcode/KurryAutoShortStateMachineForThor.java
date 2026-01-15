@@ -16,8 +16,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--KurryAutoShortStateMachineTTTT", group = "Linear Opmode")
-public class KurryAutoShortStateMachine extends LinearOpMode {
+@Autonomous(name = "--ThorAutoShortStateMachine", group = "Linear Opmode")
+public class KurryAutoShortStateMachineForThor extends LinearOpMode {
     enum KurryState{
         eFind_MOTIF,
         eConfirm_MOTIF,
@@ -345,6 +345,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
+        /*
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -358,7 +359,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
         divider = hardwareMap.get(CRServo.class, "sw");
-
+*/
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -369,10 +370,11 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         imu.initialize(imuParams);
         imu.resetYaw();
 
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
         frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.FORWARD);
+
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         setMotorsUsingEncoders();
 
