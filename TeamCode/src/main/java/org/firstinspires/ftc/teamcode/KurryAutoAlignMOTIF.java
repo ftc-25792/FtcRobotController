@@ -50,7 +50,7 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
     static final double fing_Post_Timeout = 2000;
-    private DcMotor frontRight, backLeft, backRight;
+    private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
     private Servo flapperRight, flapperLeft;
@@ -80,6 +80,10 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
     private double leftSpeed = 0;
     private double rightSpeed = 0;
     private double headingError = 0;
+
+    static final double POST_RANGE_TOL = 1;
+    static final double POST_BEARING_TOL = 2;
+    static final double POST_YAW_TOL = 2;
 
     static final double     COUNTS_PER_MOTOR_REV    = 537.7 ;   // eg: GoBILDA 312 RPM Yellow Jacket
     static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // No External Gearing.
@@ -218,19 +222,48 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
                 targetHeading = fallbackLaunchHeading;
 
                 drive = 1;
-                turn = 1;
-                strafe = 1;
+                if(!targetHeadingInit) {
+                    // Reset timer so we can timeout if tag doesnt align in time
+                    stateTimer.reset();
+                    targetHeadingInit = true;
+                    setMotorsNOTUsingEncoders();
+                }
+                List detections = aprilTagHelper.getDetections();
+                if (detections.isEmpty()) {
+                    telemetry.addLine("POST tag not found");
+                    telemetry.update();
+                    moveRobot(0,0);
+                    CurrentState = KurryState.eDone;
+                    return;
+                }
+                PostTag =(org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+                double rangeError = PostTag.ftcPose.range - 10;
+                double bearingError =  PostTag.ftcPose.bearing;
+                double yawError = PostTag.ftcPose.yaw;
+                drive = Range.clip(rangeError*SPEED_GAIN,-MAX_AUTO_SPEED,MAX_AUTO_SPEED);
+                turn = Range.clip(bearingError*TURN_GAIN,-MAX_AUTO_TURN,MAX_AUTO_TURN);
+                strafe = Range.clip(-yawError*STRAFE_GAIN,-MAX_AUTO_STRAFE,MAX_AUTO_STRAFE);
+
+                moveRobotForTurn(drive,strafe,turn);
+                sleep(500); // configure
+
+                telemetry.addData("POST Align", "R %.1f | B %.1f | Y %.1f", rangeError, bearingError, yawError);
+                telemetry.update();
+
+                if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(bearingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
+                    telemetry.addLine("POST aligned");
+                    telemetry.update();
+                    moveRobot(0,0);
+                    targetHeadingInit = false;
+                    CurrentState = KurryState.eDone;
+                    return;
+
+                }
+                sleep(100);
+
             }
             setMotorsNOTUsingEncoders();
         }
-
-
-        moveRobot(drive, strafe, turn);
-        sleep(10);
-
-       sendTelemetry(false);
-
-       CurrentState= KurryState.eDone;
 
     }
 
@@ -258,12 +291,12 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
         findPostOneTime = true;
         targetHeadingInit = false;
 
-       // frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
+       /* launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         launcherRight.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -276,7 +309,7 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
         divider = hardwareMap.get(CRServo.class, "sw");
-
+*/
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -289,7 +322,7 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
-       // frontLeft.setDirection(DcMotor.Direction.FORWARD);
+        frontLeft.setDirection(DcMotor.Direction.FORWARD);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         setMotorsUsingEncoders();
@@ -577,7 +610,7 @@ public class KurryAutoAlignMOTIF extends LinearOpMode {
      * <p>
      * Positive Yaw is counter-clockwise
      */
-    public void moveRobot(double x, double y, double yaw) {
+    public void moveRobotForTurn(double x, double y, double yaw) {
         // Calculate wheel powers.
         double frontLeftPower    =  x - y - yaw;
         double frontRightPower   =  x + y + yaw;

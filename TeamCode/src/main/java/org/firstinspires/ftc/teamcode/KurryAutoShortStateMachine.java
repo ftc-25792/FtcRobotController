@@ -38,7 +38,16 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     Alliance alliance = Alliance.eRed;
 
     static double SIGN_Alliance= 1;
-
+    static final double POST_RANGE_INCHES = 36;
+    static final double POST_RANGE_TOL = 1;
+    static final double POST_BEARING_TOL = 2;
+    static final double POST_YAW_TOL = 2;
+    final double SPEED_GAIN = 0.03;
+    final double STRAFE_GAIN = 0.02;
+    final double TURN_GAIN = 0.01;
+    static final double MAX_AUTO_SPEED = 0.5;
+    static final double MAX_AUTO_STRAFE = 0.5;
+    static final double MAX_AUTO_TURN = 0.3;
     private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
@@ -84,6 +93,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double     P_TURN_GAIN            = 0.02;     // Larger is more responsive, but also less stable.
     static final double     P_DRIVE_GAIN           = 0.03;     // Larger is more responsive, but also less stable.
+
+    private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
 
     static final double MAX_TURN_SPEED = 0.2;
     static boolean findMOTIFStrafing = true;
@@ -153,9 +164,11 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     aprilTagHelper.telemetryAprilTag(telemetry);
                     telemetry.update();
                     detections = aprilTagHelper.getDetections();
-                    if(((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
-                        CurrentState = KurryState.eFind_POST;
-                        findMotif = true;
+                    if(!detections.isEmpty()) {
+                        if (((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
+                            CurrentState = KurryState.eFind_POST;
+                            findMotif = true;
+                        }
                     }
                     else {
                         CurrentState = KurryState.eFind_MOTIF;
@@ -183,13 +196,13 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
 
                         PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eLaunch;
+                        CurrentState = KurryState.eAlign_POST;
                         findPost = true;
                         break;
                     }
                     if(stateTimer.milliseconds() >= fing_Post_Timeout)
                     {
-                        CurrentState = KurryState.eLaunch;
+                        CurrentState = KurryState.eAlign_POST;
                         findPost = false;
                         break;
                     }
@@ -252,46 +265,44 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         }
     }
     private void AlignPost() {
-        if(!targetHeadingInit)
-        {
+        if(!targetHeadingInit) {
             // Reset timer so we can timeout if tag doesnt align in time
             stateTimer.reset();
             targetHeadingInit = true;
-
-            // Compute Absolute Heading target once
-            double currentHeading = getHeading();
-            if(PostTag != null) {
-                double tagYAWDeg = Math.toDegrees(PostTag.ftcPose.yaw);
-                double offset = 10;
-                // double offset = 0 +10 -90 ; // right side of the tag
-                targetHeading = AngleUnit.normalizeDegrees(currentHeading + tagYAWDeg + offset);
-
-                telemetry.addData("Target , TagyAW , current heading ","%5.2f %5.3f %5.2f",targetHeading,tagYAWDeg,currentHeading);
-                telemetry.update();
-                sleep(500);
-            }
-            else {
-                // fallback heading if no Post Tag
-                telemetry.addLine("fallback ");
-                telemetry.update();
-                sleep(500);
-                targetHeading = fallbackLaunchHeading;
-            }
             setMotorsNOTUsingEncoders();
         }
-        double currentHeading = getHeading();
-        double headingError = AngleUnit.normalizeDegrees(targetHeading-currentHeading);
+        List detections = aprilTagHelper.getDetections();
+        if (detections.isEmpty()) {
+            telemetry.addLine("POST tag not found");
+            telemetry.update();
+            moveRobot(0,0);
+            CurrentState = KurryState.eLaunch;
+            return;
+        }
+        PostTag =(org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+        double rangeError = PostTag.ftcPose.range - POST_RANGE_INCHES;
+        double bearingError =  PostTag.ftcPose.bearing;
+        double yawError = PostTag.ftcPose.yaw;
+        double drive = Range.clip(rangeError*SPEED_GAIN,-MAX_AUTO_SPEED,MAX_AUTO_SPEED);
+        double turn = Range.clip(bearingError*TURN_GAIN,-MAX_AUTO_TURN,MAX_AUTO_TURN);
+        double strafe = Range.clip(-yawError*STRAFE_GAIN,-MAX_AUTO_STRAFE,MAX_AUTO_STRAFE);
 
-        // if within threshold, move to next state
-        if(Math.abs(headingError) <= HEADING_THRESHOLD){
+        moveRobotForTurn(drive,strafe,turn);
+        sleep(500); // configure
+
+        telemetry.addData("POST Align", "R %.1f | B %.1f | Y %.1f", rangeError, bearingError, yawError);
+        telemetry.update();
+
+        if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(bearingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
+            telemetry.addLine("POST aligned");
+            telemetry.update();
             moveRobot(0,0);
             targetHeadingInit = false;
             CurrentState = KurryState.eLaunch;
-            telemetry.addLine("heading reached");
-            telemetry.update();
-            sleep(500);
             return;
+
         }
+        sleep(100);
         // if we gave taken too long,fallback
         if(stateTimer.milliseconds() > Align_POST_Timeout )
         {
@@ -300,14 +311,9 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             CurrentState = KurryState.eLaunch;
             telemetry.addLine("timeout ");
             telemetry.update();
-            sleep(3000);
+            sleep(300);
             return;
         }
-        // Lets turn and align
-        double turnSpeed = Range.clip(headingError * P_TURN_GAIN, -MAX_TURN_SPEED, MAX_TURN_SPEED);
-        moveRobot(0.2,turnSpeed);
-
-        sendTelemetry(false);
 
     }
 
@@ -366,7 +372,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotor.Direction.FORWARD);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         setMotorsUsingEncoders();
@@ -600,12 +606,32 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         // Stop all motion;
         moveRobot(0, 0);
     }
-    /**
-     * Take separate drive (fwd/rev) and turn (right/left) requests,
-     * combines them, and applies the appropriate speed commands to the left and right wheel motors.
-     * @param drive forward motor speed
-     * @param turn  clockwise turning motor speed.
-     */
+
+    public void moveRobotForTurn(double x, double y, double yaw) {
+        // Calculate wheel powers.
+        double frontLeftPower    =  x - y - yaw;
+        double frontRightPower   =  x + y + yaw;
+        double backLeftPower     =  x + y - yaw;
+        double backRightPower    =  x - y + yaw;
+
+        // Normalize wheel powers to be less than 1.0
+        double max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
+        max = Math.max(max, Math.abs(backLeftPower));
+        max = Math.max(max, Math.abs(backRightPower));
+
+        if (max > 1.0) {
+            frontLeftPower /= max;
+            frontRightPower /= max;
+            backLeftPower /= max;
+            backRightPower /= max;
+        }
+
+        // Send powers to the wheels.
+        frontLeft.setPower(frontLeftPower);
+        frontRight.setPower(frontRightPower);
+        backLeft.setPower(backLeftPower);
+        backRight.setPower(backRightPower);
+    }
     public void moveRobot(double drive, double turn) {
         driveSpeed = drive; // Save for telemetry
         turnSpeed  = turn;  // Save for telemetry

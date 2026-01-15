@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "--KURRY TeleOp", group = "Linear Opmode")
+@TeleOp(name = "--KURRY TeleOp.V67", group = "Linear Opmode")
 public class KurryTeleOpFinal extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
@@ -31,8 +31,8 @@ public class KurryTeleOpFinal extends LinearOpMode {
     private double rightLaunchPower = 0.4;
     private double leftLauncherPowerMID = 0.48;
     private double rightLauncherPowerMID = 0.55;
-    private double leftLauncherXC = 0.68;
-    private double rightLauncherXC = 0.68;
+    private double leftLauncherXC = 0.72;
+    private double rightLauncherXC = 0.8;
 
     private double flapperLeftPosition = 0.3;
     private double flapperRightPosition = 0.71;
@@ -108,8 +108,8 @@ public class KurryTeleOpFinal extends LinearOpMode {
             double powerR = 0;
             double powerL = 0;
 
-            if (gamepad2.right_trigger> 0.2) powerR = 0.37;
-            if (gamepad2.left_trigger>0.2) powerL = 0.37;
+            if (gamepad2.right_trigger> 0.2) powerR = 0.43;
+            if (gamepad2.left_trigger>0.2) powerL = 0.43;
             if (gamepad2.left_bumper) powerL = leftLauncherPowerMID;
             if (gamepad2.right_bumper) powerR = rightLauncherPowerMID;
             if (gamepad2.dpad_up) powerL = leftLauncherXC;

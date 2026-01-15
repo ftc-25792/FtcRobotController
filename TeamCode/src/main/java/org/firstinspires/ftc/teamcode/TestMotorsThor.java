@@ -14,8 +14,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp(name = "--TestMotorsEncoders", group = "Linear Opmode")
-public class TestMotorsEncoders extends LinearOpMode {
+@TeleOp(name = "--TestMotorsForThor", group = "Linear Opmode")
+public class TestMotorsThor extends LinearOpMode {
     enum KurryState{
         eFind_MOTIF,
         eConfirm_MOTIF,
@@ -84,32 +84,30 @@ public class TestMotorsEncoders extends LinearOpMode {
         InitializeMotorServosEverything();
 
         waitForStart();
-
+        setMotorsUsingEncoders();
         while(opModeIsActive())
         {
             TelemetryRobotState();
 
-            setMotorsUsingEncoders();
             if(gamepad1.xWasPressed())
             {
-                driveStraightSingleMotor(2,true, frontRight);
+                testMotor(frontRight);
 
             }
             if(gamepad1.bWasPressed())
             {
-                driveStraightSingleMotor(2,true, frontLeft);
-
+                testMotor(frontLeft);
             }
 
             if(gamepad1.yWasPressed())
             {
-                driveStraightSingleMotor(2,true, backLeft);
+                testMotor(backLeft);
 
             }
 
             if(gamepad1.aWasPressed())
             {
-                driveStraightSingleMotor(2,true, backRight);
+                testMotor(backRight);
 
             }
 //            if(gamepad1.x) {
@@ -130,9 +128,15 @@ public class TestMotorsEncoders extends LinearOpMode {
     }
 
     private void testMotor(DcMotor motor) {
-        motor.setPower(0.5);
-        sleep(2000);
-        motor.setPower(0);
+
+          for (int i = 0 ; i < 10; i++) {
+            motor.setPower(0.2);
+            telemetry.addData("Motor", motor.getConnectionInfo());
+            telemetry.addData("Encoder Position", motor.getCurrentPosition());
+            telemetry.update();
+            sleep(2000);
+        }
+    motor.setPower(0);
     }
 
 
@@ -165,6 +169,7 @@ public class TestMotorsEncoders extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
+        /*
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight"); // swapped intentionally
         launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
@@ -179,7 +184,7 @@ public class TestMotorsEncoders extends LinearOpMode {
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
         divider = hardwareMap.get(CRServo.class, "sw");
-
+*/
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -190,10 +195,14 @@ public class TestMotorsEncoders extends LinearOpMode {
         imu.initialize(imuParams);
         imu.resetYaw();
 
+
+
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+
+
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
-        frontLeft.setDirection(DcMotor.Direction.FORWARD);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         setMotorsUsingEncoders();
 
@@ -301,27 +310,30 @@ public class TestMotorsEncoders extends LinearOpMode {
         setAllPower(0);
     }
 
-    private void driveStraightSingleMotor(double inches, boolean forward, DcMotor motor) {
+    private void driveStraight(double inches, boolean forward) {
         int move = (int) (inches * TICKS_PER_INCH);
         if (!forward) move = -move;
 
         setMotorsUsingEncoders();
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setTargetPosition(move);
+        frontRight.setTargetPosition(move);
+        backLeft.setTargetPosition(move);
+        backRight.setTargetPosition(move);
 
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        motor.setTargetPosition(move);
-
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setPower(0.5);
-
+        setAllPower(DRIVE_SPEED);
+        runtime.reset();
         while (opModeIsActive() &&
-                (motor.isBusy()) ){
-            telemetry.addData("Driving ", inches);
-            telemetry.addData("Motor", motor);
+                (frontLeft.isBusy() || frontRight.isBusy() || backLeft.isBusy() || backRight.isBusy()) &&
+                runtime.seconds() < 5) {
+            telemetry.addData("Driving", inches);
             telemetry.update();
         }
-        motor.setPower(0);
+        stopAll();
         sleep(500);
     }
 

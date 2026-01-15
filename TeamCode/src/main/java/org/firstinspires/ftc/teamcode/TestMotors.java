@@ -164,6 +164,7 @@ public class TestMotors extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
+        /*
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherRight"); // swapped intentionally
         launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherLeft");
@@ -178,7 +179,7 @@ public class TestMotors extends LinearOpMode {
         flapperLeft.setDirection(Servo.Direction.REVERSE);
 
         divider = hardwareMap.get(CRServo.class, "sw");
-
+*/
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
