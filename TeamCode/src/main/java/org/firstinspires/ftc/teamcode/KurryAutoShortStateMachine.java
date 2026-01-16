@@ -16,8 +16,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--KurryAutoShortStateMachineTTTT", group = "Linear Opmode")
+@Autonomous(name = "--Kurry AutoShort StateMachine", group = "Linear Opmode")
 public class KurryAutoShortStateMachine extends LinearOpMode {
+
+
+    public static final double Red_In = 0.45;
+    public static final double Red_Out = 0.5;
+    public static final double Blue_IN = 0.48;
+    public static final double Blue_Out = 0.42;
+    public static final double POST_DISTANCE = 1.5;
+    double diff = 2;
     enum KurryState{
         eFind_MOTIF,
         eConfirm_MOTIF,
@@ -27,7 +35,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         eFind_More_Artifacts,
         ePICKUP,
         ePark,
-        GetBackToSho
+        GetBackToSho,
+        eDone;
 
     };
     enum Alliance {
@@ -37,21 +46,23 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     Alliance alliance = Alliance.eRed;
 
-    static double SIGN_Alliance= 1;
+    static double SIGN_Alliance= -1;
     static final double POST_RANGE_INCHES = 36;
     static final double POST_RANGE_TOL = 1;
-    static final double POST_BEARING_TOL = 2;
-    static final double POST_YAW_TOL = 2;
+    static final double POST_BEARING_TOL = 3;
+    static final double POST_YAW_TOL = 10;
     final double SPEED_GAIN = 0.03;
     final double STRAFE_GAIN = 0.02;
     final double TURN_GAIN = 0.01;
     static final double MAX_AUTO_SPEED = 0.5;
     static final double MAX_AUTO_STRAFE = 0.5;
     static final double MAX_AUTO_TURN = 0.3;
-    private KurryState CurrentState = KurryState.eFind_POST;
+    private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
-    private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag,PostTag;
+    private static boolean PrepDone = false;
+    private ElapsedTime prepTimer = new ElapsedTime();
+    private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag = null,PostTag = null;
 
     private final int RedPost = 24, BluePost = 20;
 
@@ -62,7 +73,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private double fallbackLaunchHeading = 0.0;
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
-    static final double fing_Post_Timeout = 2000;
+    static final double fing_Post_Timeout = 4000;
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
@@ -78,6 +89,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private static final double HEADING_THRESHOLD = 3.0; // init was 1 checking 3 now
     private static final double TICKS_PER_INCH = 537.7 / (Math.PI * 4); // 4" wheels, 537.7 ticks/rev
 
+    private double LATEST_Range, LATEST_Bearing ;
 
     private static final double MOTIF_STRAF = 20;
     private static final double MOTIF_DRIVE = 1.5;
@@ -102,6 +114,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     static final double MAX_TURN_SPEED = 0.2;
     static boolean findMOTIFStrafing = true;
+    static double TOTAL_STAF = 0.0;
     static boolean findPostOneTime = true;
     static final double TIMEOUT_SECONDS = 5.0;
 
@@ -121,13 +134,21 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
             telemetry.addData("Alliance ", alliance);
             telemetry.update();
+
+            if (alliance == Alliance.eBlue){
+                SIGN_Alliance = 1;
+            }
+            else{
+                SIGN_Alliance = -1;
+            }
+            telemetry.addData("Alliance ", alliance);
+            telemetry.addData("Sign", SIGN_Alliance);
+            telemetry.update();
+
         }
 
         waitForStart();
 
-        if (alliance == Alliance.eBlue){
-            SIGN_Alliance = -1;
-        }
 
         while(opModeIsActive())
         {
@@ -135,14 +156,18 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             switch(CurrentState){
                 case eFind_MOTIF:
                 {
+
                     if(findMOTIFStrafing) {
                         //driveStraight(1,false);
+
+                        PrepForLaunch();
                         if(alliance == Alliance.eRed) {
                             strafing(MOTIF_STRAF, true);
                         }
                         else {
                             strafing(MOTIF_STRAF, false);
                         }
+                        TOTAL_STAF = 0.0;
                         findMOTIFStrafing = false;
                     }
                     List detections = aprilTagHelper.getDetections();
@@ -153,66 +178,53 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     //}
                     if(!detections.isEmpty())
                     {
-                        MotifID= ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
+                        MotifID = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
                         MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF;
+                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF; //eFind_POST
+                        findMotif = true;
                         break;
                     }
                     driveStraight(MOTIF_DRIVE,false);
+                    TOTAL_STAF += MOTIF_DRIVE;
                 }
 
                 break;
-                case eConfirm_MOTIF:
-
+                case eConfirm_MOTIF: {
                     List detections;
                     aprilTagHelper.telemetryAprilTag(telemetry);
+                    telemetry.update();
                     detections = aprilTagHelper.getDetections();
-                    if(!detections.isEmpty()) {
+                    if (!detections.isEmpty()) {
                         if (((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
+                            aprilTagHelper.telemetryAprilTag(telemetry);
+                            telemetry.update();
                             CurrentState = KurryState.eFind_POST;
                             findMotif = true;
                         }
-                    }
-                    else {
+                    } else {
                         CurrentState = KurryState.eFind_MOTIF;
                     }
+                }
                     break;
 
                 case eFind_POST:
-                    if (findPostOneTime )
-                    {
-                        setMotorsNOTUsingEncoders();
-                        turnRelative(0.2, SIGN_Alliance * 90, 100000);
-                        findPostOneTime = false;
-                        stateTimer.reset();
-                    }
-
-                    turnRelative(0.1, SIGN_Alliance* 4,100000);
-                    detections = aprilTagHelper.getDetections();
-                    aprilTagHelper.telemetryAprilTag(telemetry);
-                    telemetry.update();
-                    if(!detections.isEmpty()  && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == RedPost){
-                        org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
-
-                        PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eAlign_POST;
-                        findPost = true;
-                        break;
-                    }
-                    //if(stateTimer.milliseconds() >= fing_Post_Timeout)
-                    if(false)
-                    {
-                        CurrentState = KurryState.eAlign_POST;
-                        findPost = false;
-                        break;
-                    }
+                    FindPost();
                     break;
                 case eAlign_POST:
                     AlignPost();
                     break;
                 case eLaunch:
+                    if (!PrepDone){
+                        PrepForLaunch();
+                    }
+                    while(prepTimer.milliseconds() <= 4000) {
+                    telemetry.addLine("Waiting");
+                    telemetry.update();
+                    }
+                    telemetry.addLine("Launching");
+                    telemetry.update();
                     launch(MotifID);
-                    CurrentState = KurryState.eFind_More_Artifacts;
+                    CurrentState = KurryState.ePark;
                     break;
                 case ePICKUP:
                     Sort(1);
@@ -224,9 +236,16 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
                     break;
                 case ePark:
+                    if(alliance == Alliance.eRed) {
+                        strafing(20, false);
+                    }
+                    else {
+                        strafing(20, true);
+                    }
+                    CurrentState = KurryState.eDone;
                     break;
                 case eFind_More_Artifacts:
-                    turnRelative(0.3,SIGN_Alliance * 45,2000);
+                    turnRelative(0.3,SIGN_Alliance * 45,1000);
                     if(alliance == Alliance.eRed) {
                         strafing(20, false);
                     }
@@ -240,6 +259,62 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         // Stop camera
         aprilTagHelper.stop();
     }
+
+    private void FindPost() {
+        if (findPostOneTime )
+        {
+            double angle = TurnToPost();
+            telemetry.addData("Angle rotated is ",+ angle);
+            telemetry.update();
+            PrepForLaunch();
+            PrepDone = true;
+
+            findPostOneTime = false;
+            stateTimer.reset();
+        }
+
+
+        List detections = aprilTagHelper.getDetections();
+        aprilTagHelper.telemetryAprilTag(telemetry);
+        telemetry.update();
+        int post = RedPost;
+        if(Alliance.eBlue == alliance)
+        {
+            post = BluePost;
+        }
+        if(!detections.isEmpty()  && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == post){
+            org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+
+            PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
+            CurrentState = KurryState.eAlign_POST;
+            findPostOneTime = true;
+            findPost = true;
+
+            TelemetryRobotState();
+            telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
+            telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
+            telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
+            telemetry.update();
+            return;
+        }
+        driveStraight(POST_DISTANCE,false);
+        if(stateTimer.milliseconds() >= fing_Post_Timeout)
+        {
+            CurrentState = KurryState.eAlign_POST;
+            findPost = false;
+            findPostOneTime = true;
+            return;
+        }
+    }
+
+    private double TurnToPost() {
+        setMotorsNOTUsingEncoders();
+        double angle = SIGN_Alliance * 90;
+        turnRelative(0.3, angle, 1500); //SIGN_Alliance *
+        telemetryIMU();
+        return angle;
+    }
+
     private void BackToShoot(){
         driveStraight(21,false);
         if (alliance == Alliance.eRed){
@@ -260,60 +335,6 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             divider.setPower(0);
         }
     }
-//    private void AlignPost() {
-//        if(!targetHeadingInit) {
-//            // Reset timer so we can timeout if tag doesnt align in time
-//            stateTimer.reset();
-//            targetHeadingInit = true;
-//            PrepForLaunch();
-//            setMotorsNOTUsingEncoders();
-//        }
-//        List detections = aprilTagHelper.getDetections();
-//        if (detections.isEmpty()) {
-//            telemetry.addLine("POST tag not found");
-//            telemetry.update();
-//            moveRobot(0,0);
-//            CurrentState = KurryState.eLaunch;
-//            return;
-//        }
-//        PostTag =(org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
-//        double rangeError = PostTag.ftcPose.range - POST_RANGE_INCHES;
-//        double bearingError =  PostTag.ftcPose.bearing;
-//        double yawError = PostTag.ftcPose.yaw;
-//        double drive = Range.clip(rangeError*SPEED_GAIN,-MAX_AUTO_SPEED,MAX_AUTO_SPEED);
-//        double turn = Range.clip(bearingError*TURN_GAIN,-MAX_AUTO_TURN,MAX_AUTO_TURN);
-//        double strafe = Range.clip(-yawError*STRAFE_GAIN,-MAX_AUTO_STRAFE,MAX_AUTO_STRAFE);
-//
-//        moveRobotForTurn(drive,strafe,turn);
-//        sleep(100); // configure
-//        moveRobot(0,0);
-//
-//        telemetry.addData("POST Align", "R %.1f | B %.1f | Y %.1f", rangeError, bearingError, yawError);
-//        telemetry.update();
-//
-//        if(Math.abs(rangeError)<= POST_RANGE_TOL && Math.abs(bearingError) <= POST_BEARING_TOL && Math.abs(yawError)<= POST_YAW_TOL){
-//            telemetry.addLine("POST aligned");
-//            telemetry.update();
-//            moveRobot(0,0);
-//            targetHeadingInit = false;
-//            CurrentState = KurryState.eLaunch;
-//            return;
-//
-//        }
-//
-//        // if we gave taken too long,fallback
-//        if(stateTimer.milliseconds() > Align_POST_Timeout )
-//        {
-//            moveRobot(0,0);
-//            targetHeadingInit = false;
-//            CurrentState = KurryState.eLaunch;
-//            telemetry.addLine("timeout ");
-//            telemetry.update();
-//            sleep(300);
-//            return;
-//        }
-//
-//    }
 private void AlignPost() {
 
     double drive = 1, turn = 1 , strafe  = 1;
@@ -323,25 +344,34 @@ private void AlignPost() {
         stateTimer.reset();
         setMotorsNOTUsingEncoders();
         targetHeadingInit = true;
-
     }
     List detections = aprilTagHelper.getDetections();
     if(!detections.isEmpty()) {
-        MotifTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
-        if (MotifTag != null) {
-            double rangeError = (MotifTag.ftcPose.range - 25);
-            double headingError = MotifTag.ftcPose.bearing;
-            double yawError = MotifTag.ftcPose.yaw;
+        PostTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+        if(alliance == Alliance.eBlue){
+             diff = 2;
+        } else{
+            diff = -2;
+
+        }
+        if (PostTag != null) {
+            double rangeError = (PostTag.ftcPose.range - 40);
+            double headingError = PostTag.ftcPose.bearing - diff;
+            double yawError = PostTag.ftcPose.yaw;
 
             // Use the speed and turn "gains" to calculate how we want the robot to move.
             drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
             turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
             strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
 
-            telemetry.addData("Range",  "%5.1f inches", MotifTag.ftcPose.range);
-            telemetry.addData("Bearing","%3.0f degrees", MotifTag.ftcPose.bearing);
-            telemetry.addData("Yaw","%3.0f degrees", MotifTag.ftcPose.yaw);
+            telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
+            telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
+            telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
             telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+            telemetry.addData("Range","Error %5.2f, Tolerance %5.2f",rangeError,POST_RANGE_TOL);
+            telemetry.addData("Yaw","Error %5.2f, Tolerance %5.2f",yawError, POST_YAW_TOL);
+            telemetry.addData("Bearing","Heading error %5.2f, Bearing tol %5.2f", headingError,POST_BEARING_TOL);
+
             telemetry.update();
 
             //sleep(200);
@@ -355,6 +385,7 @@ private void AlignPost() {
                 telemetry.update();
                 moveRobot(0,0);
                 targetHeadingInit = false;
+                Post_AlignTelemetry();
                 CurrentState = KurryState.eLaunch;
                 return;
 
@@ -371,9 +402,20 @@ private void AlignPost() {
     else {
         telemetry.addLine("Detection is empty");
         telemetry.update();
+        Post_AlignTelemetry();
+        CurrentState = KurryState.eLaunch;
     }
 
 }
+
+    private void Post_AlignTelemetry() {
+        if(PostTag != null) {
+            LATEST_Bearing = PostTag.ftcPose.bearing;
+            LATEST_Range = PostTag.ftcPose.range;
+        }
+        TelemetryRobotState();
+        //sleep(2000);
+    }
 
     private void TelemetryRobotState() {
         telemetry.addData("current state is ",CurrentState);
@@ -387,7 +429,12 @@ private void AlignPost() {
         else
             telemetry.addLine("Seen Post NO");
 
+
+
         telemetry.addData("Pattern ", MotifID);
+
+        telemetry.addData("Latest Range " , +LATEST_Range);
+        telemetry.addData("LATEST bearing", +LATEST_Bearing);
         telemetry.update();
     }
 
@@ -398,6 +445,11 @@ private void AlignPost() {
         findMOTIFStrafing = true;
         findPostOneTime = true;
         targetHeadingInit = false;
+        PrepDone = false;
+        TOTAL_STAF = 0.0;
+
+        SIGN_Alliance = -1;
+        alliance = Alliance.eRed;
 
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -443,7 +495,7 @@ private void AlignPost() {
     private void telemetryIMU() {
         telemetry.addData("imu Head  Pitch, Roll" , "%5.2f %5.2f  %5.2f", getHeading(),getPitch(),getRoll());
         telemetry.update();
-        sleep(2000);
+        //sleep(2000);
     }
 
     private void launch(int pattern) {
@@ -451,27 +503,29 @@ private void AlignPost() {
         switch (pattern) {
             case 23:
                 rightLaunch();
-                divide();
+                divide(false);
                 rightLaunch();
+                divide(true);
                 leftLaunch();
 
                 break;
             case 22:
                 rightLaunch();
+
                 leftLaunch();
-                divide();
+                divide(false);
                 rightLaunch();
                 break;
             case 21:
             default:
                 leftLaunch();
                 rightLaunch();
-                divide();
+                divide(false);
                 rightLaunch();
                 break;
 
         }
-        strafing(15,false);
+
         divider.setPower(0);
         intake.setPower(0);
         launcherLeft.setPower(0);
@@ -479,33 +533,63 @@ private void AlignPost() {
     }
 
     private void PrepForLaunch() {
-        launcherLeft.setPower(0.7);
-        launcherRight.setPower(0.7);
 
+        if(Alliance.eBlue == alliance){
+            launcherLeft.setPower(Blue_Out);
+            launcherRight.setPower(Blue_IN);
+            telemetry.addData("Launch Left Power", + Blue_Out);
+            telemetry.addData("Launch Right Power" , Blue_IN);
+            telemetry.update();
 
-        divider.setPower(1);
+        }else {
+            launcherLeft.setPower(Red_In);
+            launcherRight.setPower(Red_Out);
+            telemetry.addData("Launch Left Power", + Red_In);
+            telemetry.addData("Launch Right Power" ,+ Red_Out);
+            telemetry.update();
+        }
+
+        divider.setPower(0);
         intake.setPower(0.8);
+        prepTimer.reset();
 
     }
 
-    private void divide(){
-        sleep(500);
-        divider.setPower(1);//move to the right
-        sleep(1000);
+    private void divide(boolean isLeft){
+
+        if(isLeft){
+            divider.setPower(-1);//move to the left
+
+        } else{
+            divider.setPower(1);
+        }
+        sleep(2500);
     }
 
     private void rightLaunch() {
+
         flapperRight.setPosition(0.58);
         sleep(1000);
         flapperRight.setPosition(0.71);
         sleep(1000);
+
     }
 
     private void leftLaunch() {
+
+        if(alliance == Alliance.eRed)
+        {
+            strafing(2,false);
+        }
         flapperLeft.setPosition(0.14);
         sleep(1000);
         flapperLeft.setPosition(0.3);
         sleep(1000);
+        if(alliance == Alliance.eRed)
+        {
+            strafing(2, true);
+        }
+
     }
 
     private void setMotorsUsingEncoders() {
@@ -562,7 +646,7 @@ private void AlignPost() {
             telemetry.update();
         }
         stopAll();
-        sleep(500);
+        sleep(50);
     }
 
     private void strafing(double inches, boolean left) {
@@ -626,7 +710,7 @@ private void AlignPost() {
             }
 
             double turn = direction * maxTurnSpeed;
-            moveRobot(0, turn);
+            moveRobotForTurn(0, 0, turn);
 
             sendTelemetry(false);
         }
@@ -658,14 +742,14 @@ private void AlignPost() {
             {
                 telemetry.addLine("Heading error small exit");
                 telemetry.update();
-                sleep(500);
+             //   sleep(500);
                 break;
             }
             if(runtime.milliseconds() > timeoutInMS)
             {
                 telemetry.addLine("turn timeout");
                 telemetry.update();
-                sleep(500);
+               // sleep(500);
                 break;
             }
             // Determine required steering to keep on heading
