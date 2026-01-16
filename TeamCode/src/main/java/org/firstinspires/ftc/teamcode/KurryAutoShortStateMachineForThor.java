@@ -16,7 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--ThorAutoShortStateMachine", group = "Linear Opmode")
+@Autonomous(name = "--ThorAutoShortStateMachine v3", group = "Linear Opmode")
 public class KurryAutoShortStateMachineForThor extends LinearOpMode {
     enum KurryState{
         eFind_MOTIF,
@@ -185,6 +185,7 @@ public class KurryAutoShortStateMachineForThor extends LinearOpMode {
                         driveStraight(15, false);
                         setMotorsNOTUsingEncoders();
                         turnRelative(0.2, SIGN_Alliance * 45, 1000);
+                       // moveRobotForTurn(0,0,SIGN_Alliance *45);
                         findPostOneTime = false;
                         stateTimer.reset();
                     }
@@ -212,7 +213,7 @@ public class KurryAutoShortStateMachineForThor extends LinearOpMode {
                     AlignPost();
                     break;
                 case eLaunch:
-                    launch(MotifID);
+                   // launch(MotifID);
                     CurrentState = KurryState.eFind_More_Artifacts;
                     break;
                 case ePICKUP:
@@ -222,7 +223,6 @@ public class KurryAutoShortStateMachineForThor extends LinearOpMode {
                 case GetBackToSho:
                     BackToShoot();
                     CurrentState = KurryState.eLaunch;
-
                     break;
                 case ePark:
                     break;
@@ -266,7 +266,7 @@ public class KurryAutoShortStateMachineForThor extends LinearOpMode {
             // Reset timer so we can timeout if tag doesnt align in time
             stateTimer.reset();
             targetHeadingInit = true;
-            PrepForLaunch();
+          //  PrepForLaunch();
             setMotorsNOTUsingEncoders();
         }
         List detections = aprilTagHelper.getDetections();
@@ -363,8 +363,8 @@ public class KurryAutoShortStateMachineForThor extends LinearOpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters imuParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
+                        RevHubOrientationOnRobot.UsbFacingDirection.UP
                 )
         );
         imu.initialize(imuParams);

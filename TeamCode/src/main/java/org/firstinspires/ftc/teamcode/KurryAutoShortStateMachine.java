@@ -48,7 +48,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     static final double MAX_AUTO_SPEED = 0.5;
     static final double MAX_AUTO_STRAFE = 0.5;
     static final double MAX_AUTO_TURN = 0.3;
-    private KurryState CurrentState = KurryState.eFind_MOTIF;
+    private KurryState CurrentState = KurryState.eFind_POST;
     private int MotifID = 21;
     private boolean findMotif = false, findPost = false;
     private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag,PostTag;
@@ -79,7 +79,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private static final double TICKS_PER_INCH = 537.7 / (Math.PI * 4); // 4" wheels, 537.7 ticks/rev
 
 
-    private static final double MOTIF_STRAF = 24;
+    private static final double MOTIF_STRAF = 20;
     private static final double MOTIF_DRIVE = 1.5;
 
     // Telemetry variables
@@ -181,15 +181,13 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                 case eFind_POST:
                     if (findPostOneTime )
                     {
-                        setMotorsUsingEncoders();
-                        driveStraight(15, false);
                         setMotorsNOTUsingEncoders();
-                        turnRelative(0.2, SIGN_Alliance * 45, 1000);
+                        turnRelative(0.2, SIGN_Alliance * 90, 100000);
                         findPostOneTime = false;
                         stateTimer.reset();
                     }
 
-                    turnRelative(0.1, SIGN_Alliance* 4,1000);
+                    turnRelative(0.1, SIGN_Alliance* 4,100000);
                     detections = aprilTagHelper.getDetections();
                     aprilTagHelper.telemetryAprilTag(telemetry);
                     telemetry.update();
@@ -201,7 +199,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         findPost = true;
                         break;
                     }
-                    if(stateTimer.milliseconds() >= fing_Post_Timeout)
+                    //if(stateTimer.milliseconds() >= fing_Post_Timeout)
+                    if(false)
                     {
                         CurrentState = KurryState.eAlign_POST;
                         findPost = false;
@@ -261,60 +260,120 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             divider.setPower(0);
         }
     }
-    private void AlignPost() {
-        if(!targetHeadingInit) {
-            // Reset timer so we can timeout if tag doesnt align in time
-            stateTimer.reset();
-            targetHeadingInit = true;
-            PrepForLaunch();
-            setMotorsNOTUsingEncoders();
-        }
-        List detections = aprilTagHelper.getDetections();
-        if (detections.isEmpty()) {
-            telemetry.addLine("POST tag not found");
-            telemetry.update();
-            moveRobot(0,0);
-            CurrentState = KurryState.eLaunch;
-            return;
-        }
-        PostTag =(org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
-        double rangeError = PostTag.ftcPose.range - POST_RANGE_INCHES;
-        double bearingError =  PostTag.ftcPose.bearing;
-        double yawError = PostTag.ftcPose.yaw;
-        double drive = Range.clip(rangeError*SPEED_GAIN,-MAX_AUTO_SPEED,MAX_AUTO_SPEED);
-        double turn = Range.clip(bearingError*TURN_GAIN,-MAX_AUTO_TURN,MAX_AUTO_TURN);
-        double strafe = Range.clip(-yawError*STRAFE_GAIN,-MAX_AUTO_STRAFE,MAX_AUTO_STRAFE);
+//    private void AlignPost() {
+//        if(!targetHeadingInit) {
+//            // Reset timer so we can timeout if tag doesnt align in time
+//            stateTimer.reset();
+//            targetHeadingInit = true;
+//            PrepForLaunch();
+//            setMotorsNOTUsingEncoders();
+//        }
+//        List detections = aprilTagHelper.getDetections();
+//        if (detections.isEmpty()) {
+//            telemetry.addLine("POST tag not found");
+//            telemetry.update();
+//            moveRobot(0,0);
+//            CurrentState = KurryState.eLaunch;
+//            return;
+//        }
+//        PostTag =(org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+//        double rangeError = PostTag.ftcPose.range - POST_RANGE_INCHES;
+//        double bearingError =  PostTag.ftcPose.bearing;
+//        double yawError = PostTag.ftcPose.yaw;
+//        double drive = Range.clip(rangeError*SPEED_GAIN,-MAX_AUTO_SPEED,MAX_AUTO_SPEED);
+//        double turn = Range.clip(bearingError*TURN_GAIN,-MAX_AUTO_TURN,MAX_AUTO_TURN);
+//        double strafe = Range.clip(-yawError*STRAFE_GAIN,-MAX_AUTO_STRAFE,MAX_AUTO_STRAFE);
+//
+//        moveRobotForTurn(drive,strafe,turn);
+//        sleep(100); // configure
+//        moveRobot(0,0);
+//
+//        telemetry.addData("POST Align", "R %.1f | B %.1f | Y %.1f", rangeError, bearingError, yawError);
+//        telemetry.update();
+//
+//        if(Math.abs(rangeError)<= POST_RANGE_TOL && Math.abs(bearingError) <= POST_BEARING_TOL && Math.abs(yawError)<= POST_YAW_TOL){
+//            telemetry.addLine("POST aligned");
+//            telemetry.update();
+//            moveRobot(0,0);
+//            targetHeadingInit = false;
+//            CurrentState = KurryState.eLaunch;
+//            return;
+//
+//        }
+//
+//        // if we gave taken too long,fallback
+//        if(stateTimer.milliseconds() > Align_POST_Timeout )
+//        {
+//            moveRobot(0,0);
+//            targetHeadingInit = false;
+//            CurrentState = KurryState.eLaunch;
+//            telemetry.addLine("timeout ");
+//            telemetry.update();
+//            sleep(300);
+//            return;
+//        }
+//
+//    }
+private void AlignPost() {
 
-        moveRobotForTurn(drive,strafe,turn);
-        sleep(100); // configure
-        moveRobot(0,0);
+    double drive = 1, turn = 1 , strafe  = 1;
 
-        telemetry.addData("POST Align", "R %.1f | B %.1f | Y %.1f", rangeError, bearingError, yawError);
-        telemetry.update();
-
-        if(Math.abs(rangeError)<= POST_RANGE_TOL && Math.abs(bearingError) <= POST_BEARING_TOL && Math.abs(yawError)<= POST_YAW_TOL){
-            telemetry.addLine("POST aligned");
-            telemetry.update();
-            moveRobot(0,0);
-            targetHeadingInit = false;
-            CurrentState = KurryState.eLaunch;
-            return;
-
-        }
-
-        // if we gave taken too long,fallback
-        if(stateTimer.milliseconds() > Align_POST_Timeout )
-        {
-            moveRobot(0,0);
-            targetHeadingInit = false;
-            CurrentState = KurryState.eLaunch;
-            telemetry.addLine("timeout ");
-            telemetry.update();
-            sleep(300);
-            return;
-        }
+    if(!targetHeadingInit) {
+        // Reset timer so we can timeout if tag doesnt align in time
+        stateTimer.reset();
+        setMotorsNOTUsingEncoders();
+        targetHeadingInit = true;
 
     }
+    List detections = aprilTagHelper.getDetections();
+    if(!detections.isEmpty()) {
+        MotifTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+        if (MotifTag != null) {
+            double rangeError = (MotifTag.ftcPose.range - 25);
+            double headingError = MotifTag.ftcPose.bearing;
+            double yawError = MotifTag.ftcPose.yaw;
+
+            // Use the speed and turn "gains" to calculate how we want the robot to move.
+            drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+            turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+            strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+            telemetry.addData("Range",  "%5.1f inches", MotifTag.ftcPose.range);
+            telemetry.addData("Bearing","%3.0f degrees", MotifTag.ftcPose.bearing);
+            telemetry.addData("Yaw","%3.0f degrees", MotifTag.ftcPose.yaw);
+            telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+            telemetry.update();
+
+            //sleep(200);
+            moveRobotForTurn(drive,strafe,turn);
+            sleep(100); // configure
+            moveRobot(0,0);
+
+
+            if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(headingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
+                telemetry.addLine("POST aligned");
+                telemetry.update();
+                moveRobot(0,0);
+                targetHeadingInit = false;
+                CurrentState = KurryState.eLaunch;
+                return;
+
+            }
+        }
+        else {
+            // fallback heading if no  Tag
+            telemetry.addLine("fallback ");
+            telemetry.update();
+            sleep(500);
+            targetHeading = fallbackLaunchHeading;
+        }
+    }
+    else {
+        telemetry.addLine("Detection is empty");
+        telemetry.update();
+    }
+
+}
 
     private void TelemetryRobotState() {
         telemetry.addData("current state is ",CurrentState);
@@ -542,9 +601,39 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     }
 
     public void turnRelative(double maxTurnSpeed, double deltaAngle, double timeoutInMS) {
-        double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
-        turnToHeading(maxTurnSpeed, targetHeading, timeoutInMS);
+      //  double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
+        //turnToHeading(maxTurnSpeed, targetHeading, timeoutInMS);
+        setMotorsNOTUsingEncoders();
+
+        double startHeading = getHeading();
+        double direction = Math.signum(deltaAngle); // +CCW, -CW
+        double targetAngle = Math.abs(deltaAngle);
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        while (opModeIsActive() && timer.milliseconds() < timeoutInMS) {
+
+            double currentHeading = getHeading();
+
+            // How far have we rotated since start
+            double delta = AngleUnit.normalizeDegrees(currentHeading - startHeading);
+
+            double rotated = Math.abs(delta);
+
+            if (rotated >= targetAngle - HEADING_THRESHOLD) {
+                break;
+            }
+
+            double turn = direction * maxTurnSpeed;
+            moveRobot(0, turn);
+
+            sendTelemetry(false);
+        }
+
+        moveRobot(0, 0);
     }
+
 
     /**
 
