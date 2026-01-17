@@ -16,14 +16,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--Kurry AutoShort StateMachine", group = "Linear Opmode")
-public class KurryAutoShortStateMachine extends LinearOpMode {
+@Autonomous(name = "--Kurry AutoLong StateMachine", group = "Linear Opmode")
+public class KurryAutoLongStateMachine extends LinearOpMode {
 
 
-    public static final double Red_In = 0.45;
-    public static final double Red_Out = 0.5;
-    public static final double Blue_IN = 0.48;
-    public static final double Blue_Out = 0.42;
+    public static final double Red_In = 0.75;
+    public static final double Red_Out = 0.75;
+    public static final double Blue_IN = 0.75;
+    public static final double Blue_Out = 0.75;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -92,7 +92,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private double LATEST_Range, LATEST_Bearing ;
 
     private static final double MOTIF_STRAF = 20;
-    private static final double MOTIF_DRIVE = 1.5;
+    private static final double MOTIF_DRIVE = 0.5;
 
     // Telemetry variables
 
@@ -161,12 +161,6 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         //driveStraight(1,false);
 
                         PrepForLaunch();
-                        if(alliance == Alliance.eRed) {
-                            strafing(MOTIF_STRAF, true);
-                        }
-                        else {
-                            strafing(MOTIF_STRAF, false);
-                        }
                         TOTAL_STAF = 0.0;
                         findMOTIFStrafing = false;
                     }
@@ -180,11 +174,11 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     {
                         MotifID = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
                         MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF; //eFind_POST
+                        CurrentState = KurryState.eLaunch;//.eConfirm_MOTIF; //eFind_POST
                         findMotif = true;
                         break;
                     }
-                    driveStraight(MOTIF_DRIVE,false);
+                    driveStraight(MOTIF_DRIVE,true);
                     TOTAL_STAF += MOTIF_DRIVE;
                 }
 
@@ -205,21 +199,22 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                         CurrentState = KurryState.eFind_MOTIF;
                     }
                 }
-                    break;
+                break;
 
                 case eFind_POST:
-                    FindPost();
+                    GoToPost();
                     break;
                 case eAlign_POST:
                     AlignPost();
                     break;
                 case eLaunch:
+                    GoToPost();
                     if (!PrepDone){
                         PrepForLaunch();
                     }
-                    while(prepTimer.milliseconds() <= 4000) {
-                    telemetry.addLine("Waiting");
-                    telemetry.update();
+                    while(prepTimer.milliseconds() <= 6000) {
+                        telemetry.addLine("Waiting");
+                        telemetry.update();
                     }
                     telemetry.addLine("Launching");
                     telemetry.update();
@@ -237,10 +232,10 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     break;
                 case ePark:
                     if(alliance == Alliance.eRed) {
-                        strafing(20, false);
+                        driveStraight(10, true);
                     }
                     else {
-                        strafing(20, true);
+                        driveStraight(10, true);
                     }
                     CurrentState = KurryState.eDone;
                     break;
@@ -260,7 +255,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         aprilTagHelper.stop();
     }
 
-    private void FindPost() {
+    private void GoToPost() {
         if (findPostOneTime )
         {
             double angle = TurnToPost();
@@ -309,7 +304,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     private double TurnToPost() {
         setMotorsNOTUsingEncoders();
-        double angle = SIGN_Alliance * 90;
+        driveStraight(4,true);
+        double angle = SIGN_Alliance * 25;
         turnRelative(0.3, angle, 1500); //SIGN_Alliance *
         telemetryIMU();
         return angle;
@@ -335,78 +331,78 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             divider.setPower(0);
         }
     }
-private void AlignPost() {
+    private void AlignPost() {
 
-    double drive = 1, turn = 1 , strafe  = 1;
+        double drive = 1, turn = 1 , strafe  = 1;
 
-    if(!targetHeadingInit) {
-        // Reset timer so we can timeout if tag doesnt align in time
-        stateTimer.reset();
-        setMotorsNOTUsingEncoders();
-        targetHeadingInit = true;
-    }
-    List detections = aprilTagHelper.getDetections();
-    if(!detections.isEmpty()) {
-        PostTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
-        if(alliance == Alliance.eBlue){
-             diff = 2;
-        } else{
-            diff = -2;
-
+        if(!targetHeadingInit) {
+            // Reset timer so we can timeout if tag doesnt align in time
+            stateTimer.reset();
+            setMotorsNOTUsingEncoders();
+            targetHeadingInit = true;
         }
-        if (PostTag != null) {
-            double rangeError = (PostTag.ftcPose.range - 40);
-            double headingError = PostTag.ftcPose.bearing - diff;
-            double yawError = PostTag.ftcPose.yaw;
+        List detections = aprilTagHelper.getDetections();
+        if(!detections.isEmpty()) {
+            PostTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+            if(alliance == Alliance.eBlue){
+                diff = 2;
+            } else{
+                diff = -2;
 
-            // Use the speed and turn "gains" to calculate how we want the robot to move.
-            drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
-            strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            }
+            if (PostTag != null) {
+                double rangeError = (PostTag.ftcPose.range - 40);
+                double headingError = PostTag.ftcPose.bearing - diff;
+                double yawError = PostTag.ftcPose.yaw;
 
-            telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
-            telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
-            telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
-            telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-            telemetry.addData("Range","Error %5.2f, Tolerance %5.2f",rangeError,POST_RANGE_TOL);
-            telemetry.addData("Yaw","Error %5.2f, Tolerance %5.2f",yawError, POST_YAW_TOL);
-            telemetry.addData("Bearing","Heading error %5.2f, Bearing tol %5.2f", headingError,POST_BEARING_TOL);
+                // Use the speed and turn "gains" to calculate how we want the robot to move.
+                drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+                turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+                strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
 
-            telemetry.update();
+                telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
+                telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
+                telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
+                telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+                telemetry.addData("Range","Error %5.2f, Tolerance %5.2f",rangeError,POST_RANGE_TOL);
+                telemetry.addData("Yaw","Error %5.2f, Tolerance %5.2f",yawError, POST_YAW_TOL);
+                telemetry.addData("Bearing","Heading error %5.2f, Bearing tol %5.2f", headingError,POST_BEARING_TOL);
 
-            //sleep(200);
-            moveRobotForTurn(drive,strafe,turn);
-            sleep(100); // configure
-            moveRobot(0,0);
-
-
-            if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(headingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
-                telemetry.addLine("POST aligned");
                 telemetry.update();
-                moveRobot(0,0);
-                targetHeadingInit = false;
-                Post_AlignTelemetry();
-                CurrentState = KurryState.eLaunch;
-                return;
 
+                //sleep(200);
+                moveRobotForTurn(drive,strafe,turn);
+                sleep(100); // configure
+                moveRobot(0,0);
+
+
+                if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(headingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
+                    telemetry.addLine("POST aligned");
+                    telemetry.update();
+                    moveRobot(0,0);
+                    targetHeadingInit = false;
+                    Post_AlignTelemetry();
+                    CurrentState = KurryState.eLaunch;
+                    return;
+
+                }
+            }
+            else {
+                // fallback heading if no  Tag
+                telemetry.addLine("fallback ");
+                telemetry.update();
+                sleep(500);
+                targetHeading = fallbackLaunchHeading;
             }
         }
         else {
-            // fallback heading if no  Tag
-            telemetry.addLine("fallback ");
+            telemetry.addLine("Detection is empty");
             telemetry.update();
-            sleep(500);
-            targetHeading = fallbackLaunchHeading;
+            Post_AlignTelemetry();
+            CurrentState = KurryState.eLaunch;
         }
-    }
-    else {
-        telemetry.addLine("Detection is empty");
-        telemetry.update();
-        Post_AlignTelemetry();
-        CurrentState = KurryState.eLaunch;
-    }
 
-}
+    }
 
     private void Post_AlignTelemetry() {
         if(PostTag != null) {
@@ -502,7 +498,6 @@ private void AlignPost() {
 
         switch (pattern) {
             case 23:
-                sleep(2000);
                 rightLaunch();
                 divide(false);
                 rightLaunch();
@@ -511,7 +506,6 @@ private void AlignPost() {
 
                 break;
             case 22:
-                sleep(2000);
                 rightLaunch();
 
                 leftLaunch();
@@ -565,15 +559,15 @@ private void AlignPost() {
         } else{
             divider.setPower(1);
         }
-        sleep(3500);
+        sleep(2500);
     }
 
     private void rightLaunch() {
 
         flapperRight.setPosition(0.58);
-        sleep(1500);
+        sleep(1000);
         flapperRight.setPosition(0.71);
-        sleep(1500);
+        sleep(1000);
 
     }
 
@@ -687,7 +681,7 @@ private void AlignPost() {
     }
 
     public void turnRelative(double maxTurnSpeed, double deltaAngle, double timeoutInMS) {
-      //  double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
+        //  double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
         //turnToHeading(maxTurnSpeed, targetHeading, timeoutInMS);
         setMotorsNOTUsingEncoders();
 
@@ -744,14 +738,14 @@ private void AlignPost() {
             {
                 telemetry.addLine("Heading error small exit");
                 telemetry.update();
-             //   sleep(500);
+                //   sleep(500);
                 break;
             }
             if(runtime.milliseconds() > timeoutInMS)
             {
                 telemetry.addLine("turn timeout");
                 telemetry.update();
-               // sleep(500);
+                // sleep(500);
                 break;
             }
             // Determine required steering to keep on heading
