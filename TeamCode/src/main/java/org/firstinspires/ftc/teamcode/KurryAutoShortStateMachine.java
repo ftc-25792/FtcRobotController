@@ -22,8 +22,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     public static final double Red_In = 0.45;
     public static final double Red_Out = 0.5;
-    public static final double Blue_IN = 0.48;
-    public static final double Blue_Out = 0.42;
+    public static final double Blue_IN = 0.47;
+    public static final double Blue_Out = 0.40;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -45,7 +45,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     };
 
     Alliance alliance = Alliance.eRed;
-
+    static double Find_Post_Dist_Moved;
     static double SIGN_Alliance= -1;
     static final double POST_RANGE_INCHES = 36;
     static final double POST_RANGE_TOL = 1;
@@ -73,7 +73,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private double fallbackLaunchHeading = 0.0;
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
-    static final double fing_Post_Timeout = 4000;
+    static final double fing_Post_Timeout = 2000;
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotor launcherLeft, launcherRight, intake;
     private IMU imu;
@@ -298,9 +298,11 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             return;
         }
         driveStraight(POST_DISTANCE,false);
-        if(stateTimer.milliseconds() >= fing_Post_Timeout)
+        Find_Post_Dist_Moved =+ POST_DISTANCE;
+    if(stateTimer.milliseconds() >= fing_Post_Timeout)
         {
-            CurrentState = KurryState.eAlign_POST;
+            driveStraight(Find_Post_Dist_Moved,true);
+            CurrentState = KurryState.eLaunch;
             findPost = false;
             findPostOneTime = true;
             return;
@@ -447,6 +449,7 @@ private void AlignPost() {
         targetHeadingInit = false;
         PrepDone = false;
         TOTAL_STAF = 0.0;
+        Find_Post_Dist_Moved = 0.0;
 
         SIGN_Alliance = -1;
         alliance = Alliance.eRed;
@@ -502,7 +505,7 @@ private void AlignPost() {
 
         switch (pattern) {
             case 23:
-                sleep(2000);
+
                 rightLaunch();
                 divide(false);
                 rightLaunch();
@@ -511,7 +514,7 @@ private void AlignPost() {
 
                 break;
             case 22:
-                sleep(2000);
+
                 rightLaunch();
 
                 leftLaunch();
@@ -552,7 +555,7 @@ private void AlignPost() {
         }
 
         divider.setPower(0);
-        intake.setPower(0.8);
+        intake.setPower(1);
         prepTimer.reset();
 
     }
@@ -565,14 +568,14 @@ private void AlignPost() {
         } else{
             divider.setPower(1);
         }
-        sleep(3500);
+        sleep(3000);
     }
 
     private void rightLaunch() {
 
-        flapperRight.setPosition(0.58);
+        flapperRight.setPosition(0.65);
         sleep(1500);
-        flapperRight.setPosition(0.71);
+        flapperRight.setPosition(0.81);
         sleep(1500);
 
     }
@@ -583,9 +586,9 @@ private void AlignPost() {
         {
             strafing(2,false);
         }
-        flapperLeft.setPosition(0.14);
+        flapperLeft.setPosition(0.4);
         sleep(1000);
-        flapperLeft.setPosition(0.3);
+        flapperLeft.setPosition(0.55);
         sleep(1000);
         if(alliance == Alliance.eRed)
         {

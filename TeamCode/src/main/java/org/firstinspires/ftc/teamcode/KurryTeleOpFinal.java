@@ -5,13 +5,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "--KURRY TeleOp.V67", group = "Linear Opmode")
+@TeleOp(name = "--KURRY TeleOp", group = "Linear Opmode")
 public class KurryTeleOpFinal extends LinearOpMode {
-    private DcMotor frontLeft, frontRight, backLeft, backRight;
-    private DcMotor launcherLeft, launcherRight, intake;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
+    private DcMotorEx launcherLeft, launcherRight;
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
 
@@ -34,8 +35,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
     private double leftLauncherXC = 0.75;
     private double rightLauncherXC = 0.75;
 
-    private double flapperLeftPosition = 0.3;
-    private double flapperRightPosition = 0.71;
+
 
     private static final double SPEED_FACTOR = 0.7;
 
@@ -46,8 +46,8 @@ public class KurryTeleOpFinal extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
+        launcherLeft = hardwareMap.get(DcMotorEx.class, "launcherLeft");
 
         intake = hardwareMap.get(DcMotor.class, "intake");
         flapperLeft = hardwareMap.get(Servo.class, "fl");
@@ -150,15 +150,15 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
             // Flapper control (no sleep, just toggle positions)
             if (gamepad2.b) {
-                flapperLeft.setPosition(0.14);
+                flapperLeft.setPosition(0.4);
             } else {
-                flapperLeft.setPosition(flapperLeftPosition);
+                flapperLeft.setPosition(0.55);
             }
 
             if (gamepad2.dpad_left) {
-                flapperRight.setPosition(0.58);
+                flapperRight.setPosition(0.65);
             } else {
-                flapperRight.setPosition(flapperRightPosition);
+                flapperRight.setPosition(0.82);
             }
 
             // Servo wheel control
