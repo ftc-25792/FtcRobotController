@@ -16,98 +16,78 @@ import java.util.List;
 
 @TeleOp(name = "--KURRYTeleOpV.M&K", group = "Linear Opmode")
 public class KurryTeleOpFinal extends LinearOpMode {
+    // Hardware Members
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
     private DcMotorEx launcherLeft, launcherRight;
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
     private IMU imu;
 
-    private boolean isHoldingTriggerR = false;
-    private boolean isHoldingPositionR = false;
-    private boolean isHoldingTriggerL = false;
-    private boolean isHoldingPositionL = false;
-    private int holdPosition = 0;
-
+    // State Machine
     private KurryStateDrive CurrentState = KurryStateDrive.eDrive;
 
-    // Servo constants
-    final double ServoWheelRIGHT = 1;
-    final double ServoWheelSTOP = 0;
-    final double ServoWheelLEFT = -1;
-
-    // Launcher speed presets
-    private double leftLauncherPowerMID = 0.48;
-    private double rightLauncherPowerMID = 0.55;
-    private double leftLauncherXC = 0.75;
-    private double rightLauncherXC = 0.75;
-
+    // Constants - Driving
     private static final double SPEED_FACTOR = 0.7;
 
-    // Align POST constants
+    // Constants - AprilTag Alignment
     private static final double SPEED_GAIN = 0.03;
-    private static final double TURN_GAIN = 0.01;
+    private static final double TURN_GAIN  = 0.01;
     private static final double STRAFE_GAIN = 0.02;
     private static final double MAX_AUTO_SPEED = 0.5;
-    private static final double MAX_AUTO_TURN = 0.3;
+    private static final double MAX_AUTO_TURN  = 0.3;
     private static final double MAX_AUTO_STRAFE = 0.5;
 
-    private AprilTagHelper aprilTagHelper;
-    private AprilTagDetection PostTag = null;
+    // Tolerance for Auto-Exit
+    private static final double RANGE_TOLERANCE = 1.0;   // inches
+    private static final double BEARING_TOLERANCE = 2.0; // degrees
+    private static final double YAW_TOLERANCE = 2.0;     // degrees
 
-    enum KurryStateDrive {
-        eDrive,
-        eAlign_POST
-    }
+    private AprilTagHelper aprilTagHelper;
+
+    enum KurryStateDrive { eDrive, eAlign_POST }
 
     @Override
     public void runOpMode() {
-        // Hardware mapping
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
+        // --- 1. Hardware Mapping ---
+        frontLeft   = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontRight  = hardwareMap.get(DcMotor.class, "frontRight");
+        backLeft    = hardwareMap.get(DcMotor.class, "backLeft");
+        backRight   = hardwareMap.get(DcMotor.class, "backRight");
         launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
-        launcherLeft = hardwareMap.get(DcMotorEx.class, "launcherLeft");
-        intake = hardwareMap.get(DcMotor.class, "intake");
+        launcherLeft  = hardwareMap.get(DcMotorEx.class, "launcherLeft");
+        intake      = hardwareMap.get(DcMotor.class, "intake");
         flapperLeft = hardwareMap.get(Servo.class, "fl");
         flapperRight = hardwareMap.get(Servo.class, "fr");
-        servoWheel = hardwareMap.get(CRServo.class, "sw");
+        servoWheel  = hardwareMap.get(CRServo.class, "sw");
 
-        // Motor directions
+        // --- 2. Directions ---
+        // For most Mecanum robots, the left side must be reversed
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
+
         launcherLeft.setDirection(DcMotor.Direction.REVERSE);
         launcherRight.setDirection(DcMotor.Direction.FORWARD);
-
-        // Servo directions
         flapperLeft.setDirection(Servo.Direction.REVERSE);
         flapperRight.setDirection(Servo.Direction.FORWARD);
 
-        // Zero power behavior
+        // --- 3. Brake Modes ---
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // --- 4. Sensors/Helpers ---
         imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters imuParams = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-                )
-        );
-        imu.initialize(imuParams);
-        imu.resetYaw();
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD)));
 
         aprilTagHelper = new AprilTagHelper(hardwareMap);
 
-        telemetry.addLine("KURRY TeleOp Initialized");
+        telemetry.addLine("Ready to Start");
         telemetry.update();
 
         waitForStart();
@@ -116,17 +96,14 @@ public class KurryTeleOpFinal extends LinearOpMode {
             switch (CurrentState) {
                 case eDrive:
                     driveControls();
-                    if (gamepad1.a) {
-                        CurrentState = KurryStateDrive.eAlign_POST;
-                    }
+                    // Press 'A' to start automatic alignment
+                    if (gamepad1.a) CurrentState = KurryStateDrive.eAlign_POST;
                     break;
 
                 case eAlign_POST:
                     alignPostTeleOp();
-                    if (gamepad1.b) {
-                        stopAll();
-                        CurrentState = KurryStateDrive.eDrive;
-                    }
+                    // Optional Manual Exit/Panic Button
+                    if (gamepad1.b) { stopAll(); CurrentState = KurryStateDrive.eDrive; }
                     break;
             }
             telemetry.update();
@@ -134,109 +111,94 @@ public class KurryTeleOpFinal extends LinearOpMode {
     }
 
     private void driveControls() {
-        double y = -gamepad1.left_stick_y;
-        double x = gamepad1.left_stick_x;
-        double rx = gamepad1.right_stick_x;
+        // Movement Math
+        double y  = -gamepad1.left_stick_y;
+        double x  =  gamepad1.left_stick_x;
+        double rx =  gamepad1.right_stick_x;
+        moveRobot(y * SPEED_FACTOR, x * SPEED_FACTOR, rx * SPEED_FACTOR);
 
-        y *= SPEED_FACTOR;
-        x *= SPEED_FACTOR;
-        rx *= SPEED_FACTOR;
+        // Launcher Controls (Unified)
+        double pL = 0, pR = 0;
+        if (gamepad2.left_trigger > 0.2) pL = 0.43;
+        else if (gamepad2.left_bumper)  pL = 0.48; // MID
+        else if (gamepad2.dpad_up)      pL = 0.75; // XC
 
-        moveRobot(y, x, rx);
+        if (gamepad2.right_trigger > 0.2) pR = 0.467;
+        else if (gamepad2.right_bumper)  pR = 0.55; // MID
+        else if (gamepad2.y)             pR = 0.75; // XC
 
-        // Launcher control
-        double powerR = 0;
-        double powerL = 0;
+        launcherLeft.setPower(pL);
+        launcherRight.setPower(pR);
 
-        if (gamepad2.right_trigger > 0.2) powerR = 0.467;
-        if (gamepad2.left_trigger > 0.2) powerL = 0.43;
-        if (gamepad2.left_bumper) powerL = leftLauncherPowerMID;
-        if (gamepad2.right_bumper) powerR = rightLauncherPowerMID;
-        if (gamepad2.dpad_up) powerL = leftLauncherXC;
-        if (gamepad2.y) powerR = rightLauncherXC;
-
-        launcherRight.setPower(powerR);
-        launcherLeft.setPower(powerL);
-
-        // Intake control
+        // Intake (With auto-braking when released)
         if (gamepad1.right_trigger > 0.2) {
-            isHoldingTriggerR = true;
-            isHoldingPositionR = false;
             intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             intake.setPower(0.8);
-        } else if (isHoldingTriggerR) {
-            isHoldingTriggerR = false;
-            isHoldingPositionR = true;
-            holdPosition = intake.getCurrentPosition();
-            intake.setTargetPosition(holdPosition);
-            intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            intake.setPower(0.3);
-        }
-
-        if (gamepad1.left_trigger > 0.2) {
-            isHoldingTriggerL = true;
-            isHoldingPositionL = false;
+        } else if (gamepad1.left_trigger > 0.2) {
             intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             intake.setPower(-0.8);
-        } else if (isHoldingTriggerL) {
-            isHoldingTriggerL = false;
-            isHoldingPositionL = true;
-            holdPosition = intake.getCurrentPosition();
-            intake.setTargetPosition(holdPosition);
+        } else {
+            intake.setTargetPosition(intake.getCurrentPosition());
             intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            intake.setPower(0.8);
+            intake.setPower(0.5); // Hold current position
         }
 
-        // Flapper control
-        if (gamepad2.b) flapperLeft.setPosition(0.4);
-        else flapperLeft.setPosition(0.55);
+        // Flappers and Servo Wheel
+        flapperLeft.setPosition(gamepad2.b ? 0.4 : 0.55);
+        flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
 
-        if (gamepad2.dpad_left) flapperRight.setPosition(0.65);
-        else flapperRight.setPosition(0.82);
-
-        // Servo wheel control
-        if (gamepad2.left_stick_button) servoWheel.setPower(ServoWheelRIGHT);
-        else if (gamepad2.right_stick_button) servoWheel.setPower(ServoWheelLEFT);
-        else if (gamepad2.dpad_down) servoWheel.setPower(ServoWheelSTOP);
+        if (gamepad2.left_stick_button)       servoWheel.setPower(1.0);
+        else if (gamepad2.right_stick_button)  servoWheel.setPower(-1.0);
+        else if (gamepad2.dpad_down)          servoWheel.setPower(0);
     }
 
     private void alignPostTeleOp() {
         List<AprilTagDetection> detections = aprilTagHelper.getDetections();
 
         if (detections != null && !detections.isEmpty()) {
-            PostTag = detections.get(0);
+            AprilTagDetection tag = detections.get(0);
 
-            double rangeError = PostTag.ftcPose.range - 40;
-            double bearingError = PostTag.ftcPose.bearing;
-            double yawError = PostTag.ftcPose.yaw;
+            double rangeError   = tag.ftcPose.range - 40;
+            double bearingError = tag.ftcPose.bearing;
+            double yawError     = tag.ftcPose.yaw;
 
+            // --- AUTO EXIT LOGIC ---
+            boolean isDistanceAligned = Math.abs(rangeError) < RANGE_TOLERANCE;
+            boolean isBearingAligned  = Math.abs(bearingError) < BEARING_TOLERANCE;
+            boolean isYawAligned      = Math.abs(yawError) < YAW_TOLERANCE;
+
+            if (isDistanceAligned && isBearingAligned && isYawAligned) {
+                stopAll();
+                gamepad1.rumble(250); // Optional: Rumble to signal completion
+                CurrentState = KurryStateDrive.eDrive;
+                return;
+            }
+
+            // Power Calculations
             double drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            double turn = Range.clip(bearingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+            double turn  = Range.clip(bearingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
             double strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
 
             moveRobot(drive, strafe, turn);
 
-            telemetry.addData("Range", "%5.1f", PostTag.ftcPose.range);
-            telemetry.addData("Bearing", "%5.1f", PostTag.ftcPose.bearing);
-            telemetry.addData("Yaw", "%5.1f", PostTag.ftcPose.yaw);
+            telemetry.addData("AutoAlign", "Active");
+            telemetry.addData("Errors (R/B/Y)", "%5.1f / %5.1f / %5.1f", rangeError, bearingError, yawError);
         } else {
-            telemetry.addLine("No POST detected!");
+            telemetry.addLine("No POST detected - Searching...");
             stopAll();
         }
     }
 
     private void moveRobot(double y, double x, double rx) {
+        // Standard Mecanum Kinematic Equations
         double fl = y + x + rx;
         double fr = y - x - rx;
         double bl = y - x + rx;
         double br = y + x - rx;
 
-        double max = Math.max(Math.max(Math.abs(fl), Math.abs(fr)),
-                Math.max(Math.abs(bl), Math.abs(br)));
-
-        if (max > 1.0) {
-            fl /= max; fr /= max; bl /= max; br /= max;
-        }
+        // Normalize powers
+        double max = Math.max(Math.abs(fl), Math.max(Math.abs(fr), Math.max(Math.abs(bl), Math.abs(br))));
+        if (max > 1.0) { fl /= max; fr /= max; bl /= max; br /= max; }
 
         frontLeft.setPower(fl);
         frontRight.setPower(fr);
@@ -245,9 +207,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
     }
 
     private void stopAll() {
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
+        frontLeft.setPower(0); frontRight.setPower(0);
+        backLeft.setPower(0); backRight.setPower(0);
     }
 }
