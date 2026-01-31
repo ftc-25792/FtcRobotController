@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "--KURRY TeleOp.V67 PIDF", group = "Linear Opmode")
-public class KurryTeleOpPIDFV1 extends LinearOpMode {
+public class KurryTeleOpV1PIDF extends LinearOpMode {
 
     // ================= DRIVE MOTORS =================
     private DcMotor frontLeft, frontRight, backLeft, backRight;
@@ -32,10 +32,10 @@ public class KurryTeleOpPIDFV1 extends LinearOpMode {
     private double flapperRightPosition = 0.71;
 
     // ================= PIDF CONSTANTS =================
-    // Tuned starting values for goBILDA 6000 RPM motors
-    private double kP = 0.0003;
-    private double kI = 0.0;
-    private double kD = 0.00004;
+    // PIDF tuned for RS-555 6000 RPM
+    private double kP = 0.0006;
+    private double kI = 0.0000005;
+    private double kD = 0.0001;
     private double kF = 0.00036;
 
     // ================= PIDF STATE =================
