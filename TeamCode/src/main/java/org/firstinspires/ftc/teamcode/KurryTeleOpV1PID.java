@@ -9,50 +9,46 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "--KURRY TeleOp.V67 PID", group = "Linear Opmode")
-public class KurryTeleOpV1 extends LinearOpMode {
+public class KurryTeleOpV1PID extends LinearOpMode {
 
-    // Drive motors
+    // ================= DRIVE MOTORS =================
     private DcMotor frontLeft, frontRight, backLeft, backRight;
 
-    // Mechanism motors
+    // ================= MECHANISM MOTORS =================
     private DcMotorEx launcherLeft, launcherRight;
     private DcMotor intake;
 
-    // Servos
+    // ================= SERVOS =================
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
 
-    // Intake holding logic
+    // ================= INTAKE HOLDING =================
     private boolean isHoldingTriggerR = false;
     private boolean isHoldingTriggerL = false;
     private int holdPosition = 0;
 
-    // Servo wheel constants
+    // ================= SERVO WHEEL =================
     final double ServoWheelRIGHT = 1;
     final double ServoWheelSTOP = 0;
     final double ServoWheelLEFT = -1;
 
-    // Drive speed
+    // ================= DRIVE SPEED =================
     private static final double SPEED_FACTOR = 0.7;
 
-    // ================= PID VARIABLES =================
+    // ================= PID VALUES (PID ONLY) =================
+    private double kP = 0.0008;
+    private double kI = 0.0000008;
+    private double kD = 0.00015;
 
-    // PID coefficients (TUNE THESE)
-    private double kP = 0.0006;
-    private double kI = 0.0000005;
-    private double kD = 0.0001;
-
-    // PID state
     private double leftIntegral = 0, rightIntegral = 0;
     private double leftLastError = 0, rightLastError = 0;
 
-    // Target velocities (ticks/sec)
     private double targetVelocityLeft = 0;
     private double targetVelocityRight = 0;
 
     private ElapsedTime pidTimer = new ElapsedTime();
 
-    // Flapper default positions
+    // ================= FLAPPER DEFAULTS =================
     private double flapperLeftPosition = 0.3;
     private double flapperRightPosition = 0.71;
 
@@ -74,20 +70,12 @@ public class KurryTeleOpV1 extends LinearOpMode {
         flapperRight = hardwareMap.get(Servo.class, "fr");
         servoWheel = hardwareMap.get(CRServo.class, "sw");
 
-        // ================= MOTOR DIRECTIONS =================
+        // ================= DIRECTIONS =================
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
-
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
-
         launcherLeft.setDirection(DcMotor.Direction.REVERSE);
-        launcherRight.setDirection(DcMotor.Direction.FORWARD);
 
-        flapperLeft.setDirection(Servo.Direction.REVERSE);
-        flapperRight.setDirection(Servo.Direction.FORWARD);
-
-        // ================= MOTOR MODES =================
+        // ================= ZERO POWER =================
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -119,7 +107,7 @@ public class KurryTeleOpV1 extends LinearOpMode {
             backLeft.setPower(leftStickY + rightStickX);
             backRight.setPower(leftStickY - rightStickX);
 
-            // ================= LAUNCHER TARGET SELECTION =================
+            // ================= TARGET SELECTION =================
             targetVelocityLeft = 0;
             targetVelocityRight = 0;
 
@@ -129,17 +117,21 @@ public class KurryTeleOpV1 extends LinearOpMode {
             if (gamepad2.left_bumper) targetVelocityLeft = 1900;
             if (gamepad2.right_bumper) targetVelocityRight = 2000;
 
-            if (gamepad2.dpad_up) targetVelocityLeft = 2600;
-            if (gamepad2.y) targetVelocityRight = 2600;
+            if (gamepad2.dpad_up) targetVelocityLeft = 2400;
+            if (gamepad2.y) targetVelocityRight = 2400;
 
-            // ================= PID CALCULATION =================
+            // ================= PID TIMING =================
             double dt = pidTimer.seconds();
             pidTimer.reset();
+            if (dt < 0.001) dt = 0.001;
 
-            // LEFT PID
+            // ================= LEFT PID =================
             double leftVelocity = launcherLeft.getVelocity();
             double leftError = targetVelocityLeft - leftVelocity;
+
             leftIntegral += leftError * dt;
+            leftIntegral = Math.max(-2000, Math.min(2000, leftIntegral));
+
             double leftDerivative = (leftError - leftLastError) / dt;
 
             double leftPower =
@@ -149,10 +141,13 @@ public class KurryTeleOpV1 extends LinearOpMode {
 
             leftLastError = leftError;
 
-            // RIGHT PID
+            // ================= RIGHT PID =================
             double rightVelocity = launcherRight.getVelocity();
             double rightError = targetVelocityRight - rightVelocity;
+
             rightIntegral += rightError * dt;
+            rightIntegral = Math.max(-2000, Math.min(2000, rightIntegral));
+
             double rightDerivative = (rightError - rightLastError) / dt;
 
             double rightPower =
@@ -161,6 +156,17 @@ public class KurryTeleOpV1 extends LinearOpMode {
                             (kD * rightDerivative);
 
             rightLastError = rightError;
+
+            // ================= RESET PID WHEN OFF =================
+            if (targetVelocityLeft == 0) {
+                leftIntegral = 0;
+                leftLastError = 0;
+            }
+
+            if (targetVelocityRight == 0) {
+                rightIntegral = 0;
+                rightLastError = 0;
+            }
 
             launcherLeft.setPower(Math.max(-1, Math.min(1, leftPower)));
             launcherRight.setPower(Math.max(-1, Math.min(1, rightPower)));
@@ -204,10 +210,10 @@ public class KurryTeleOpV1 extends LinearOpMode {
             }
 
             // ================= TELEMETRY =================
-            telemetry.addData("Target L Vel", targetVelocityLeft);
-            telemetry.addData("Target R Vel", targetVelocityRight);
-            telemetry.addData("Actual L Vel", "%.0f", launcherLeft.getVelocity());
-            telemetry.addData("Actual R Vel", "%.0f", launcherRight.getVelocity());
+            telemetry.addData("Target L", targetVelocityLeft);
+            telemetry.addData("Target R", targetVelocityRight);
+            telemetry.addData("Velocity L", "%.0f", launcherLeft.getVelocity());
+            telemetry.addData("Velocity R", "%.0f", launcherRight.getVelocity());
             telemetry.update();
 
             sleep(50);
