@@ -5,13 +5,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "--KURRY TeleOp", group = "Linear Opmode")
+@TeleOp(name = "--KURRYTeleOpV.HS", group = "Linear Opmode")
 public class KurryTeleOpV1 extends LinearOpMode {
-    private DcMotor frontLeft, frontRight, backLeft, backRight;
-    private DcMotor launcherLeft, launcherRight, intake;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
+    private DcMotorEx launcherLeft, launcherRight;
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
 
@@ -29,13 +30,12 @@ public class KurryTeleOpV1 extends LinearOpMode {
     // Launcher speed presets
     private double leftLaunchPower = 0.4;
     private double rightLaunchPower = 0.4;
-    private double leftLauncherPowerMID = 0.57;
-    private double rightLauncherPowerMID = 0.6;
-    private double leftLauncherXC = 1.0;
-    private double rightLauncherXC = 1.0;
+    private double leftLauncherPowerMID = 0.6;//0.48
+    private double rightLauncherPowerMID = 0.6;//0.55
+    private double leftLauncherXC = 0.75;
+    private double rightLauncherXC = 0.75;
 
-    private double flapperLeftPosition = 0.3;
-    private double flapperRightPosition = 0.71;
+
 
     private static final double SPEED_FACTOR = 0.7;
 
@@ -46,8 +46,8 @@ public class KurryTeleOpV1 extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
+        launcherLeft = hardwareMap.get(DcMotorEx.class, "launcherLeft");
 
         intake = hardwareMap.get(DcMotor.class, "intake");
         flapperLeft = hardwareMap.get(Servo.class, "fl");
@@ -56,9 +56,10 @@ public class KurryTeleOpV1 extends LinearOpMode {
 
         // Motor directions
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
-
         frontRight.setDirection(DcMotor.Direction.FORWARD);
+
+
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.FORWARD);
 
 
@@ -108,8 +109,8 @@ public class KurryTeleOpV1 extends LinearOpMode {
             double powerR = 0;
             double powerL = 0;
 
-            if (gamepad2.right_trigger> 0.2) powerR = 0.4;
-            if (gamepad2.left_trigger>0.2) powerL = 0.5;
+            if (gamepad2.right_trigger> 0.2) powerR = 0.467;
+            if (gamepad2.left_trigger>0.2) powerL = 0.43;
             if (gamepad2.left_bumper) powerL = leftLauncherPowerMID;
             if (gamepad2.right_bumper) powerR = rightLauncherPowerMID;
             if (gamepad2.dpad_up) powerL = leftLauncherXC;
@@ -149,15 +150,15 @@ public class KurryTeleOpV1 extends LinearOpMode {
 
             // Flapper control (no sleep, just toggle positions)
             if (gamepad2.b) {
-                flapperLeft.setPosition(0.14);
+                flapperLeft.setPosition(0.35);
             } else {
-                flapperLeft.setPosition(flapperLeftPosition);
+                flapperLeft.setPosition(0.55);
             }
 
             if (gamepad2.dpad_left) {
-                flapperRight.setPosition(0.58);
+                flapperRight.setPosition(0.65);
             } else {
-                flapperRight.setPosition(flapperRightPosition);
+                flapperRight.setPosition(0.82);
             }
 
             // Servo wheel control
