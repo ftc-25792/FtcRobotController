@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -20,10 +21,10 @@ import java.util.List;
 public class KurryAutoShortStateMachine extends LinearOpMode {
 
 
-    public static final double Red_In = 0.45;
-    public static final double Red_Out = 0.5;
-    public static final double Blue_IN = 0.47;
-    public static final double Blue_Out = 0.40;
+    public static final double Red_In = 6000*0.45;
+    public static final double Red_Out = 6000*0.5;
+    public static final double Blue_IN = 6000*0.47;
+    public static final double Blue_Out = 6000*0.40;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -74,8 +75,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
     static final double fing_Post_Timeout = 2000;
-    private DcMotor frontLeft, frontRight, backLeft, backRight;
-    private DcMotor launcherLeft, launcherRight, intake;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
+    private DcMotorEx launcherLeft, launcherRight;
     private IMU imu;
     private Servo flapperRight, flapperLeft;
     private CRServo divider;
@@ -459,8 +460,8 @@ private void AlignPost() {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
+        launcherLeft = hardwareMap.get(DcMotorEx.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
         launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         launcherRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
@@ -539,26 +540,47 @@ private void AlignPost() {
 
     private void PrepForLaunch() {
 
-        if(Alliance.eBlue == alliance){
-            launcherLeft.setPower(Blue_Out);
-            launcherRight.setPower(Blue_IN);
-            telemetry.addData("Launch Left Power", + Blue_Out);
-            telemetry.addData("Launch Right Power" , Blue_IN);
-            telemetry.update();
+        double targetVelocityIn;
+        double targetVelocityOut;
 
-        }else {
-            launcherLeft.setPower(Red_In);
-            launcherRight.setPower(Red_Out);
-            telemetry.addData("Launch Left Power", + Red_In);
-            telemetry.addData("Launch Right Power" ,+ Red_Out);
-            telemetry.update();
+        if (Alliance.eBlue == alliance) {
+            targetVelocityIn = Blue_IN;
+            targetVelocityOut = Blue_Out;
+
+            double leftVel = launcherLeft.getVelocity();
+            double rightVel = launcherRight.getVelocity();
+
+            launcherLeft.setPower(Range.clip(
+                    launcherPID(targetVelocityOut, leftVel, true), 0, 1));
+
+            launcherRight.setPower(Range.clip(
+                    launcherPID(targetVelocityIn, rightVel, false), 0, 1));
+
+            telemetry.addData("Launch Left Vel", leftVel);
+            telemetry.addData("Launch Right Vel", rightVel);
+
+        } else {
+            targetVelocityIn = Red_In;
+            targetVelocityOut = Red_Out;
+
+            double leftVel = launcherLeft.getVelocity();
+            double rightVel = launcherRight.getVelocity();
+
+            launcherLeft.setPower(Range.clip(
+                    launcherPID(targetVelocityIn, leftVel, true), 0, 1));
+
+            launcherRight.setPower(Range.clip(
+                    launcherPID(targetVelocityOut, rightVel, false), 0, 1));
+
+            telemetry.addData("Launch Left Vel", leftVel);
+            telemetry.addData("Launch Right Vel", rightVel);
         }
 
         divider.setPower(0);
         intake.setPower(1);
         prepTimer.reset();
-
     }
+
 
     private void divide(boolean isLeft){
 
@@ -948,4 +970,41 @@ private void AlignPost() {
         return orientation.getRoll(AngleUnit.DEGREES);
 
     }
+
+    private static final double LAUNCHER_kP = 0.0008;
+    private static final double LAUNCHER_kI = 0.0000008;
+    private static final double LAUNCHER_kD = 0.00015;
+
+    private double launcherLeftIntegral = 0;
+    private double launcherRightIntegral = 0;
+
+    private double launcherLeftLastError = 0;
+    private double launcherRightLastError = 0;
+
+    private ElapsedTime launcherPIDTimer = new ElapsedTime();
+
+    private double launcherPID(double targetVelocity, double currentVelocity, boolean isLeft) {
+
+        double dt = launcherPIDTimer.seconds();
+        launcherPIDTimer.reset();
+
+        double error = targetVelocity - currentVelocity;
+
+        if (isLeft) {
+            launcherLeftIntegral += error * dt;
+            double derivative = (error - launcherLeftLastError) / dt;
+            launcherLeftLastError = error;
+            return (LAUNCHER_kP * error) +
+                    (LAUNCHER_kI * launcherLeftIntegral) +
+                    (LAUNCHER_kD * derivative);
+        } else {
+            launcherRightIntegral += error * dt;
+            double derivative = (error - launcherRightLastError) / dt;
+            launcherRightLastError = error;
+            return (LAUNCHER_kP * error) +
+                    (LAUNCHER_kI * launcherRightIntegral) +
+                    (LAUNCHER_kD * derivative);
+        }
+    }
 }
+

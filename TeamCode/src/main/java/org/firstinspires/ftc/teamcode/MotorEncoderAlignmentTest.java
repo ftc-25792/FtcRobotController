@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class MotorEncoderAlignmentTest extends LinearOpMode {
 
     // List your drivetrain motors here
-    private DcMotor frontLeft, frontRight, backLeft, backRight, intake, launcherLeft, launcherRight;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, launcherLeft, launcherRight;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -20,12 +20,11 @@ public class MotorEncoderAlignmentTest extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
-        intake = hardwareMap.get(DcMotor.class, "intake");
         launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
         launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
 
         // Stop and reset all encoders
-        DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, intake, launcherLeft, launcherRight};
+        DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, launcherLeft, launcherRight};
         for (DcMotor m : motors) {
             m.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             m.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -39,6 +38,7 @@ public class MotorEncoderAlignmentTest extends LinearOpMode {
 
         launcherLeft.setDirection(DcMotor.Direction.REVERSE);
         launcherRight.setDirection(DcMotor.Direction.FORWARD);
+
 
         telemetry.addLine("Press Play to test motors one by one...");
         telemetry.update();
@@ -95,7 +95,6 @@ public class MotorEncoderAlignmentTest extends LinearOpMode {
         if (motor == frontRight) return "Front Right";
         if (motor == backLeft) return "Back Left";
         if (motor == backRight) return "Back Right";
-        if (motor == intake) return "Intake";
         if (motor == launcherLeft) return "Left Launcher";
         if (motor == launcherRight) return "Right Launcher";
         return "Unknown Motor";
