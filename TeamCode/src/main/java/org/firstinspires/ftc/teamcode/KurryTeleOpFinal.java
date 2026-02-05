@@ -126,14 +126,48 @@ public class KurryTeleOpFinal extends LinearOpMode {
             telemetry.update();
         }
     }
-
     private void driveControls() {
-        moveRobot(
-                -gamepad1.left_stick_y * SPEED_FACTOR,
-                gamepad1.left_stick_x * SPEED_FACTOR,
-                gamepad1.right_stick_x * SPEED_FACTOR
-        );
+
+        double y  = -gamepad1.left_stick_y;
+        double x  =  gamepad1.left_stick_x;
+        double rx =  gamepad1.right_stick_x;
+        moveRobot(y * SPEED_FACTOR, x * SPEED_FACTOR, rx * SPEED_FACTOR);
+
+        double pL = 0, pR = 0;
+        if (gamepad2.left_trigger > 0.2) pL = 0.43;
+        else if (gamepad2.left_bumper)  pL = 0.48;
+        else if (gamepad2.dpad_up)      pL = 1;
+
+        if (gamepad2.right_trigger > 0.2) pR = 0.467;
+        else if (gamepad2.right_bumper) pR = 0.55;
+        else if (gamepad2.y) pR =1;
+
+        launcherLeft.setPower(pL);
+        launcherRight.setPower(pR);
+
+        if (gamepad1.right_trigger > 0.2) {
+            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            intake.setPower(0.8);
+        } else if (gamepad1.left_trigger > 0.2) {
+            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            intake.setPower(-0.8);
+        } else {
+            if (intake.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
+                intake.setTargetPosition(intake.getCurrentPosition());
+                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                intake.setPower(0.5);
+            }
+        }
+
+        flapperLeft.setPosition(gamepad2.b ? 0.35 : 0.55);
+        flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
+
+        if (gamepad2.left_stick_button) servoWheel.setPower(1.0);
+        else if (gamepad2.right_stick_button) servoWheel.setPower(-1.0);
+        else if (gamepad2.dpad_down) servoWheel.setPower(0);
     }
+
+
 
     private void alignToPost() {
 
@@ -162,9 +196,9 @@ public class KurryTeleOpFinal extends LinearOpMode {
             return;
         }
 
-        double rangeError = lockedTag.ftcPose.range ;
+        double rangeError = lockedTag.ftcPose.range - TARGET_RANGE;
         double bearingError = lockedTag.ftcPose.bearing;
-        double yawError = lockedTag.ftcPose.yaw ;
+        double yawError = lockedTag.ftcPose.yaw;
 
         if (Math.abs(rangeError) < RANGE_TOL &&
                 Math.abs(bearingError) < BEARING_TOL &&
