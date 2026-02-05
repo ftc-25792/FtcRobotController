@@ -196,7 +196,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
             return;
         }
 
-        double rangeError = lockedTag.ftcPose.range - TARGET_RANGE;
+        double rangeError = lockedTag.ftcPose.range ;
         double bearingError = lockedTag.ftcPose.bearing;
         double yawError = lockedTag.ftcPose.yaw;
 
