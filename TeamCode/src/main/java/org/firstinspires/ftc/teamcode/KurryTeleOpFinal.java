@@ -152,7 +152,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
             lostTagTimer.reset();
         }
 
-        if (lockedTag == null && lostTagTimer.seconds() > 0.4) {
+        if (lockedTag == null || lostTagTimer.seconds() > 0.4) {
             moveRobot(0, 0, 0.2 * allianceSign);
             return;
         }
@@ -162,9 +162,9 @@ public class KurryTeleOpFinal extends LinearOpMode {
             return;
         }
 
-        double rangeError = lockedTag.ftcPose.range - TARGET_RANGE;
+        double rangeError = lockedTag.ftcPose.range ;
         double bearingError = lockedTag.ftcPose.bearing;
-        double yawError = lockedTag.ftcPose.yaw * allianceSign;
+        double yawError = lockedTag.ftcPose.yaw ;
 
         if (Math.abs(rangeError) < RANGE_TOL &&
                 Math.abs(bearingError) < BEARING_TOL &&
