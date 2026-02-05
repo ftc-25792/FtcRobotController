@@ -23,7 +23,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     public static final double Red_In = 6000*0.20;
     public static final double Red_Out = 6000*0.20;
-    public static final double Blue_IN = 6000*0.20;
+    public static final double Blue_IN = 6000*0.23;
     public static final double Blue_Out = 6000*0.20;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
@@ -547,7 +547,7 @@ private void AlignPost() {
         setMotorsUsingEncoders();
         if (Alliance.eBlue == alliance) {
             launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
-            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherRight.setVelocity(Blue_IN);
             launcherLeft.setVelocity(Blue_Out);
             telemetry.addData("Launch Left Vel", Blue_Out);
@@ -584,7 +584,7 @@ private void AlignPost() {
     }
 
     private void leftLaunch() {
-        flapperLeft.setPosition(0.4);
+        flapperLeft.setPosition(0.35);
         sleep(750);
         flapperLeft.setPosition(0.55);
         sleep(250);

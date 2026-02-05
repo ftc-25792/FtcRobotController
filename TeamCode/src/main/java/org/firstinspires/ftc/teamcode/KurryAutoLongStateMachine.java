@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -20,10 +21,10 @@ import java.util.List;
 public class KurryAutoLongStateMachine extends LinearOpMode {
 
 
-    public static final double Red_In = 0.75;
-    public static final double Red_Out = 0.75;
-    public static final double Blue_IN = 0.75;
-    public static final double Blue_Out = 0.75;
+    public static final double Red_In = 0.75*6000;
+    public static final double Red_Out = 0.75*6000;
+    public static final double Blue_IN = 0.75*6000;
+    public static final double Blue_Out = 0.75*6000;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -74,8 +75,8 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
     static final double fing_Post_Timeout = 4000;
-    private DcMotor frontLeft, frontRight, backLeft, backRight;
-    private DcMotor launcherLeft, launcherRight, intake;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
+    private DcMotorEx launcherLeft, launcherRight;
     private IMU imu;
     private Servo flapperRight, flapperLeft;
     private CRServo divider;
@@ -452,10 +453,10 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
-        launcherLeft = hardwareMap.get(DcMotor.class, "launcherLeft");
-        launcherRight = hardwareMap.get(DcMotor.class, "launcherRight");
-        launcherLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        launcherRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        launcherLeft = hardwareMap.get(DcMotorEx.class, "launcherLeft");
+        launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
+        launcherLeft.setDirection(DcMotorEx.Direction.REVERSE);
+        launcherRight.setDirection(DcMotorEx.Direction.FORWARD);
 
         intake = hardwareMap.get(DcMotor.class, "intake");
 
@@ -498,26 +499,28 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
 
         switch (pattern) {
             case 23:
+
                 rightLaunch();
                 divide(false);
                 rightLaunch();
                 divide(true);
-                leftLaunch();
+                BothLaunch();
 
                 break;
             case 22:
+
                 rightLaunch();
 
                 leftLaunch();
                 divide(false);
-                rightLaunch();
+                BothLaunch();
                 break;
             case 21:
             default:
                 leftLaunch();
                 rightLaunch();
                 divide(false);
-                rightLaunch();
+                BothLaunch();
                 break;
 
         }
@@ -528,64 +531,59 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
         launcherRight.setPower(0);
     }
 
+    private void BothLaunch(){
+        flapperRight.setPosition(0.65);
+        flapperLeft.setPosition(0.35);
+        sleep(750);
+        flapperRight.setPosition(0.81);
+        flapperLeft.setPosition(0.55);
+        sleep(250);
+    }
     private void PrepForLaunch() {
-
-        if(Alliance.eBlue == alliance){
-            launcherLeft.setPower(Blue_Out);
-            launcherRight.setPower(Blue_IN);
-            telemetry.addData("Launch Left Power", + Blue_Out);
-            telemetry.addData("Launch Right Power" , Blue_IN);
-            telemetry.update();
-
-        }else {
-            launcherLeft.setPower(Red_In);
-            launcherRight.setPower(Red_Out);
-            telemetry.addData("Launch Left Power", + Red_In);
-            telemetry.addData("Launch Right Power" ,+ Red_Out);
-            telemetry.update();
+        setMotorsUsingEncoders();
+        if (KurryAutoLongStateMachine.Alliance.eBlue == alliance) {
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocity(Blue_IN);
+            launcherLeft.setVelocity(Blue_Out);
+            telemetry.addData("Launch Left Vel", Blue_Out);
+            telemetry.addData("Launch Right Vel", Blue_IN);
+        } else {
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocity(Red_Out);
+            launcherLeft.setVelocity(Red_In);
+            telemetry.addData("Launch Left Vel", Red_In);
+            telemetry.addData("Launch Right Vel", Red_Out);
         }
-
         divider.setPower(0);
-        intake.setPower(0.8);
         prepTimer.reset();
-
     }
 
+
     private void divide(boolean isLeft){
-
         if(isLeft){
+            intake.setPower(1);
             divider.setPower(-1);//move to the left
-
         } else{
+            intake.setPower(1);
             divider.setPower(1);
         }
-        sleep(2500);
+        sleep(1250);
     }
 
     private void rightLaunch() {
-
-        flapperRight.setPosition(0.58);
-        sleep(1000);
-        flapperRight.setPosition(0.71);
-        sleep(1000);
-
+        flapperRight.setPosition(0.65);
+        sleep(750);
+        flapperRight.setPosition(0.81);
+        sleep(250);
     }
 
     private void leftLaunch() {
-
-        if(alliance == Alliance.eRed)
-        {
-            strafing(2,false);
-        }
-        flapperLeft.setPosition(0.14);
-        sleep(1000);
-        flapperLeft.setPosition(0.3);
-        sleep(1000);
-        if(alliance == Alliance.eRed)
-        {
-            strafing(2, true);
-        }
-
+        flapperLeft.setPosition(0.35);
+        sleep(750);
+        flapperLeft.setPosition(0.55);
+        sleep(250);
     }
 
     private void setMotorsUsingEncoders() {
