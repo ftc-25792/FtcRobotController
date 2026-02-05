@@ -108,7 +108,8 @@ public class LauncherSeparateControl extends LinearOpMode {
                 if (gamepad1.a){
                     rightPower -= STEP;
                 }
-
+                flapperLeft.setPosition(gamepad2.b ? 0.35 : 0.55);
+                flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
 
                 leftPower = Range.clip(leftPower, 0.0, 1.0);
                 rightPower = Range.clip(rightPower, 0.0, 1.0);
