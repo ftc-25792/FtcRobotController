@@ -159,7 +159,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
             }
         }
 
-        flapperLeft.setPosition(gamepad2.b ? 0.35 : 0.55);
+        flapperLeft.setPosition(gamepad2.b ? 0.55 : 0.25);
         flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
 
         if (gamepad2.left_stick_button) servoWheel.setPower(1.0);
@@ -289,22 +289,11 @@ public class KurryTeleOpFinal extends LinearOpMode {
         double dt = pidTimer.seconds();
         pidTimer.reset();
 
-        double leftPower = launcherPID(
-                targetVelocityLeft,
-                launcherLeft.getVelocity(),
-                dt,
-                true
-        );
+        launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+        launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
 
-        double rightPower = launcherPID(
-                targetVelocityRight,
-                launcherRight.getVelocity(),
-                dt,
-                false
-        );
-
-        launcherLeft.setPower(Range.clip(leftPower, -1, 1));
-        launcherRight.setPower(Range.clip(rightPower, -1, 1));
+        launcherLeft.setVelocity(targetVelocityLeft);
+        launcherRight.setVelocity(targetVelocityRight);
     }
 
     private double launcherPID(double target, double current, double dt, boolean isLeft) {
