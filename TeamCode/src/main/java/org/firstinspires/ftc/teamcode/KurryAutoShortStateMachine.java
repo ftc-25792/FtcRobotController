@@ -21,10 +21,10 @@ import java.util.List;
 public class KurryAutoShortStateMachine extends LinearOpMode {
 
 
-    public static final double Red_In = 6000*0.45;
-    public static final double Red_Out = 6000*0.5;
-    public static final double Blue_IN = 6000*0.25;
-    public static final double Blue_Out = 6000*0.25;
+    public static final double Red_In = 6000*0.20;
+    public static final double Red_Out = 6000*0.20;
+    public static final double Blue_IN = 6000*0.20;
+    public static final double Blue_Out = 6000*0.20;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -342,9 +342,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         }
     }
 private void AlignPost() {
-
     double drive = 1, turn = 1 , strafe  = 1;
-
     if(!targetHeadingInit) {
         // Reset timer so we can timeout if tag doesnt align in time
         stateTimer.reset();
@@ -358,13 +356,11 @@ private void AlignPost() {
              diff = 20;
         } else{
             diff = -12;
-
         }
         if (PostTag != null) {
             double rangeError = (PostTag.ftcPose.range - 70);
             double headingError = PostTag.ftcPose.bearing;
             double yawError = PostTag.ftcPose.yaw - diff;
-
             // Use the speed and turn "gains" to calculate how we want the robot to move.
             drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
             turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
@@ -377,14 +373,11 @@ private void AlignPost() {
             telemetry.addData("Range","Error %5.2f, Tolerance %5.2f",rangeError,POST_RANGE_TOL);
             telemetry.addData("Yaw","Error %5.2f, Tolerance %5.2f",yawError, POST_YAW_TOL);
             telemetry.addData("Bearing","Heading error %5.2f, Bearing tol %5.2f", headingError,POST_BEARING_TOL);
-
             telemetry.update();
 
-            //sleep(200);
             moveRobotForTurn(drive,strafe,turn);
 
             moveRobot(0,0);
-
 
             if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(headingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
                 telemetry.addLine("POST aligned");
@@ -401,7 +394,6 @@ private void AlignPost() {
             // fallback heading if no  Tag
             telemetry.addLine("fallback ");
             telemetry.update();
-
             targetHeading = fallbackLaunchHeading;
         }
     }
@@ -424,7 +416,6 @@ private void AlignPost() {
             LATEST_Range = PostTag.ftcPose.range;
         }
         TelemetryRobotState();
-        //sleep(2000);
     }
 
     private void TelemetryRobotState() {
@@ -506,7 +497,6 @@ private void AlignPost() {
     private void telemetryIMU() {
         telemetry.addData("imu Head  Pitch, Roll" , "%5.2f %5.2f  %5.2f", getHeading(),getPitch(),getRoll());
         telemetry.update();
-        //sleep(2000);
     }
 
     private void launch(int pattern) {
@@ -560,10 +550,8 @@ private void AlignPost() {
             launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherRight.setVelocity(Blue_IN);
             launcherLeft.setVelocity(Blue_Out);
-
             telemetry.addData("Launch Left Vel", Blue_Out);
             telemetry.addData("Launch Right Vel", Blue_IN);
-
         } else {
             launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
@@ -572,18 +560,15 @@ private void AlignPost() {
             telemetry.addData("Launch Left Vel", Red_In);
             telemetry.addData("Launch Right Vel", Red_Out);
         }
-
         divider.setPower(0);
         prepTimer.reset();
     }
 
 
     private void divide(boolean isLeft){
-
         if(isLeft){
             intake.setPower(1);
             divider.setPower(-1);//move to the left
-
         } else{
             intake.setPower(1);
             divider.setPower(1);
@@ -592,22 +577,17 @@ private void AlignPost() {
     }
 
     private void rightLaunch() {
-
         flapperRight.setPosition(0.65);
         sleep(750);
         flapperRight.setPosition(0.81);
         sleep(250);
-
     }
 
     private void leftLaunch() {
-
         flapperLeft.setPosition(0.4);
         sleep(750);
         flapperLeft.setPosition(0.55);
         sleep(250);
-
-
     }
 
     private void setMotorsUsingEncoders() {
@@ -962,40 +942,5 @@ private void AlignPost() {
 
     }
 
-    private static final double LAUNCHER_kP = 0.0008;
-    private static final double LAUNCHER_kI = 0.0000008;
-    private static final double LAUNCHER_kD = 0.00015;
-
-    private double launcherLeftIntegral = 0;
-    private double launcherRightIntegral = 0;
-
-    private double launcherLeftLastError = 0;
-    private double launcherRightLastError = 0;
-
-    private ElapsedTime launcherPIDTimer = new ElapsedTime();
-
-    private double launcherPID(double targetVelocity, double currentVelocity, boolean isLeft) {
-
-        double dt = launcherPIDTimer.seconds();
-        launcherPIDTimer.reset();
-
-        double error = targetVelocity - currentVelocity;
-
-        if (isLeft) {
-            launcherLeftIntegral += error * dt;
-            double derivative = (error - launcherLeftLastError) / dt;
-            launcherLeftLastError = error;
-            return (LAUNCHER_kP * error) +
-                    (LAUNCHER_kI * launcherLeftIntegral) +
-                    (LAUNCHER_kD * derivative);
-        } else {
-            launcherRightIntegral += error * dt;
-            double derivative = (error - launcherRightLastError) / dt;
-            launcherRightLastError = error;
-            return (LAUNCHER_kP * error) +
-                    (LAUNCHER_kI * launcherRightIntegral) +
-                    (LAUNCHER_kD * derivative);
-        }
-    }
 }
 
