@@ -15,7 +15,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
-@TeleOp(name = "--KURRYTeleOpV.M&K", group = "Linear Opmode")
+@TeleOp(name = "--KURRYTeleOpV Qualifiers", group = "Linear Opmode")
 public class KurryTeleOpFinal extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
@@ -23,6 +23,9 @@ public class KurryTeleOpFinal extends LinearOpMode {
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
     private IMU imu;
+
+    private double leftError, rightError;
+    private double leftOutput, rightOutput;
 
     private AprilTagHelper aprilTagHelper;
     private AprilTagDetection lockedTag = null;
@@ -122,6 +125,22 @@ public class KurryTeleOpFinal extends LinearOpMode {
                 alignToPost();
                 if (gamepad1.b) exitAlign();
             }
+
+            // ========== LAUNCHER PID TELEMETRY ==========
+            telemetry.addLine("==== LAUNCHER PID ====");
+            telemetry.addData("Left Target", "%.0f", targetVelocityLeft);
+            telemetry.addData("Left Velocity", "%.0f", launcherLeft.getVelocity());
+            telemetry.addData("Left Error", "%.0f", leftError);
+            telemetry.addData("Left Power", "%.3f", leftOutput);
+            telemetry.addData("Left Integral", "%.2f", leftIntegral);
+
+            telemetry.addLine();
+
+            telemetry.addData("Right Target", "%.0f", targetVelocityRight);
+            telemetry.addData("Right Velocity", "%.0f", launcherRight.getVelocity());
+            telemetry.addData("Right Error", "%.0f", rightError);
+            telemetry.addData("Right Power", "%.3f", rightOutput);
+            telemetry.addData("Right Integral", "%.2f", rightIntegral);
 
             telemetry.update();
         }
@@ -280,8 +299,8 @@ public class KurryTeleOpFinal extends LinearOpMode {
         if (gamepad2.left_trigger > 0.2)  targetVelocityLeft  = 1900;
         if (gamepad2.right_trigger > 0.2) targetVelocityRight = 2000;
 
-        if (gamepad2.left_bumper)  targetVelocityLeft  = 1900;
-        if (gamepad2.right_bumper) targetVelocityRight = 2000;
+        if (gamepad2.left_bumper)  targetVelocityLeft  = 1400;
+        if (gamepad2.right_bumper) targetVelocityRight = 1400;
 
         if (gamepad2.dpad_up) targetVelocityLeft  = 4500;
         if (gamepad2.y)       targetVelocityRight = 4500;
