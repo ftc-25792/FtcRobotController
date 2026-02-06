@@ -23,8 +23,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     public static final double Red_In = 6000*0.20;
     public static final double Red_Out = 6000*0.20;
-    public static final double Blue_IN = 6000*0.23;
-    public static final double Blue_Out = 6000*0.20;
+    public static final double Blue_IN = 6000*0.18;
+    public static final double Blue_Out = 6000*0.15;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -74,7 +74,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private double fallbackLaunchHeading = 0.0;
 
     static final double Align_POST_Timeout = 2000;// milliseconds before we give up
-    static final double fing_Post_Timeout = 2000;
+    static final double fing_Post_Timeout = 1250;
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
     private DcMotorEx launcherLeft, launcherRight;
     private IMU imu;
@@ -253,19 +253,24 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     if(findBall) {
 
                         if(alliance == Alliance.eBlue) {
-                            turnRelative(0.3,45,1000);
-                            strafing(36, true);
+                            turnRelative(0.3,38,1000);
+                            strafing(28, true);
                             Sort(1);
-                            driveStraight(20,false);
-                            strafing(36, false);
+                            driveStraight(31,false);
+                            strafing(28, false);
                             turnRelative(0.3,-45,1000);
                             CurrentState = KurryState.eLaunch;
 
 
                         }
                         else {
-                            turnRelative(0.3,-45,1000);
-                            strafing(36, false);
+                            turnRelative(0.3,-38,1000);
+                            strafing(28, false);
+                            Sort(1);
+                            driveStraight(31,false);
+                            strafing(28, true);
+                            turnRelative(0.3,45,1000);
+                            CurrentState = KurryState.eLaunch;
                         }
                         TOTAL_STAF = 0.0;
                         findBall = false;
@@ -347,7 +352,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
     private void Sort(double order){
         intake.setPower(1);
         if(order == 1){
-            driveStraight(10,true);
+            driveStraight(20,true);
             divider.setPower(1);
             driveStraight(5,true);
             divider.setPower(-1);
@@ -412,7 +417,7 @@ private void AlignPost() {
             targetHeading = fallbackLaunchHeading;
         }
     }
-    if (stateTimer.milliseconds()>2000){
+    if (stateTimer.milliseconds()>750){
         CurrentState = KurryState.eLaunch;
     }
     else {
