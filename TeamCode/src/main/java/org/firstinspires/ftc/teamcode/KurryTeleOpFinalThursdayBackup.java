@@ -9,23 +9,17 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
-import java.util.List;
-
-@TeleOp(name = "--KURRYTeleOpV Qualifiers", group = "Linear Opmode")
-public class KurryTeleOpFinal extends LinearOpMode {
+@TeleOp(name = "---KURRYTeleOpV FINAL", group = "Linear Opmode")
+public class KurryTeleOpFinalThursdayBackup extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
     private DcMotorEx launcherLeft, launcherRight;
     private Servo flapperLeft, flapperRight;
     private CRServo servoWheel;
     private IMU imu;
-
-    private double leftError, rightError;
-    private double leftOutput, rightOutput;
 
     private AprilTagHelper aprilTagHelper;
     private AprilTagDetection lockedTag = null;
@@ -50,6 +44,10 @@ public class KurryTeleOpFinal extends LinearOpMode {
     private static final double BEARING_TOL = 1.0;
     private static final double YAW_TOL = 1.0;
 
+    final double ServoWheelRIGHT = 1;
+    final double ServoWheelSTOP = 0;
+    final double ServoWheelLEFT = -1;
+
     enum DriveState { DRIVE, ALIGN }
     enum Alliance { RED, BLUE }
 
@@ -58,7 +56,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
     private double allianceSign = -1;
 
-    // ================= PID VARIABLES (ADDED) =================
+    // ================= PID CONSTANTS =================
     private double kP = 0.0008;
     private double kI = 0.0000008;
     private double kD = 0.00015;
@@ -68,6 +66,10 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
     private double targetVelocityLeft = 0;
     private double targetVelocityRight = 0;
+
+    // ===== PID TELEMETRY VARIABLES =====
+    private double leftError, rightError;
+    private double leftOutput, rightOutput;
 
     private ElapsedTime pidTimer = new ElapsedTime();
 
@@ -88,7 +90,6 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
-
         launcherLeft.setDirection(DcMotor.Direction.REVERSE);
 
         launcherLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -113,7 +114,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            updateLaunchers(); // ===== PID RUNS HERE (ADDED) =====
+            updateLaunchers();
 
             if (state == DriveState.DRIVE) {
                 driveControls();
@@ -145,6 +146,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
             telemetry.update();
         }
     }
+
     private void driveControls() {
 
         double y  = -gamepad1.left_stick_y;
@@ -152,107 +154,48 @@ public class KurryTeleOpFinal extends LinearOpMode {
         double rx =  gamepad1.right_stick_x;
         moveRobot(y * SPEED_FACTOR, x * SPEED_FACTOR, rx * SPEED_FACTOR);
 
-        double pL = 0, pR = 0;
-        if (gamepad2.left_trigger > 0.2) pL = 0.43;
-        else if (gamepad2.left_bumper)  pL = 0.48;
-        else if (gamepad2.dpad_up)      pL = 1;
-
-        if (gamepad2.right_trigger > 0.2) pR = 0.467;
-        else if (gamepad2.right_bumper) pR = 0.55;
-        else if (gamepad2.y) pR =1;
-
-        launcherLeft.setPower(pL);
-        launcherRight.setPower(pR);
-
-
-        if (gamepad1.right_trigger > 0.2) {
-            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            intake.setPower(0.8);
-        } else if (gamepad1.left_trigger > 0.2) {
-            intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            intake.setPower(-0.8);
-        } else {
-            if (intake.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
-                intake.setTargetPosition(intake.getCurrentPosition());
-                intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                intake.setPower(0.5);
-            }
-        }
+        if (gamepad1.right_trigger > 0.2) intake.setPower(1);
+        else if (gamepad1.left_trigger > 0.2) intake.setPower(-1);
+        else intake.setPower(0);
 
         flapperLeft.setPosition(gamepad2.b ? 0.65 : 0.05);
         flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
 
-        if (gamepad2.left_stick_button) servoWheel.setPower(1.0);
-        else if (gamepad2.right_stick_button) servoWheel.setPower(-1.0);
-        else if (gamepad2.dpad_down) servoWheel.setPower(0);
+        if (gamepad2.left_stick_button) {
+            servoWheel.setPower(ServoWheelRIGHT);
+        } else if (gamepad2.right_stick_button) {
+            servoWheel.setPower(ServoWheelLEFT);
+        } else if (gamepad2.dpad_down) {
+            servoWheel.setPower(ServoWheelSTOP);
+        }
+
+
+    }
+
+
+    private void updateLaunchers() {
+
+        targetVelocityLeft = 0;
+        targetVelocityRight = 0;
+
+        if (gamepad2.left_trigger > 0.2)  targetVelocityLeft  = 1300;
+        if (gamepad2.right_trigger > 0.2) targetVelocityRight = 1300;
+
+        if (gamepad2.left_bumper)  targetVelocityLeft  = 1350;
+        if (gamepad2.right_bumper) targetVelocityRight = 1800;
+
+        if (gamepad2.dpad_up) targetVelocityLeft  = 4500;
+        if (gamepad2.y)       targetVelocityRight = 4500;
+
+        launcherLeft.setVelocityPIDFCoefficients(0.0009,0.0000006,0.00005,14);
+        launcherRight.setVelocityPIDFCoefficients(0.0009,0.0000006,0.00005,14);
+        launcherLeft.setVelocity(targetVelocityLeft);
+        launcherRight.setVelocity(targetVelocityRight);
+
     }
 
 
 
-    private void alignToPost() {
-
-        if (!alignInit) {
-            alignTimer.reset();
-            lostTagTimer.reset();
-            setRunWithoutEncoders();
-            lockedTag = null;
-            alignInit = true;
-        }
-
-        List<AprilTagDetection> detections = aprilTagHelper.getDetections();
-
-        if (detections != null && !detections.isEmpty()) {
-            lockedTag = getClosestTag(detections);
-            lostTagTimer.reset();
-        }
-
-        if (lockedTag == null || lostTagTimer.seconds() > 0.4) {
-//            moveRobot(0, 0, 0.2 * allianceSign);
-            return;
-        }
-
-        if (alignTimer.seconds() > 3.0) {
-            exitAlign();
-            return;
-        }
-
-
-        double bearingError = lockedTag.ftcPose.bearing;
-        double yawError = lockedTag.ftcPose.yaw;
-
-        if (    Math.abs(bearingError) < BEARING_TOL &&
-                Math.abs(yawError) < YAW_TOL) {
-            gamepad1.rumble(250);
-            exitAlign();
-            return;
-        }
-
-
-        double strafe = Range.clip(-bearingError * STRAFE_GAIN, -MAX_STRAFE, MAX_STRAFE);
-        double turn   = Range.clip(-yawError * TURN_GAIN, -MAX_TURN, MAX_TURN);
-
-        moveRobot(0, strafe, turn);
-    }
-
-    private AprilTagDetection getClosestTag(List<AprilTagDetection> detections) {
-        AprilTagDetection best = null;
-        double bestRange = Double.MAX_VALUE;
-        for (AprilTagDetection tag : detections) {
-            if (tag.ftcPose.range < bestRange) {
-                bestRange = tag.ftcPose.range;
-                best = tag;
-            }
-        }
-        return best;
-    }
-
-    private void exitAlign() {
-        stopAll();
-        setRunUsingEncoders();
-        state = DriveState.DRIVE;
-        alignInit = false;
-        lockedTag = null;
-    }
 
     private void moveRobot(double y, double x, double rx) {
         double fl = y + x + rx;
@@ -268,78 +211,6 @@ public class KurryTeleOpFinal extends LinearOpMode {
         backRight.setPower(br);
     }
 
-    private void stopAll() {
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-    }
-
-    private void setRunWithoutEncoders() {
-        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
-
-    private void setRunUsingEncoders() {
-        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-
-    // ================= LAUNCHER PID (ADDED AT BOTTOM) =================
-
-    private void updateLaunchers() {
-
-        targetVelocityLeft = 0;
-        targetVelocityRight = 0;
-
-        if (gamepad2.left_trigger > 0.2)  targetVelocityLeft  = 1900;
-        if (gamepad2.right_trigger > 0.2) targetVelocityRight = 2000;
-
-        if (gamepad2.left_bumper)  targetVelocityLeft  = 1400;
-        if (gamepad2.right_bumper) targetVelocityRight = 1400;
-
-        if (gamepad2.dpad_up) targetVelocityLeft  = 4500;
-        if (gamepad2.y)       targetVelocityRight = 4500;
-
-        double dt = pidTimer.seconds();
-        pidTimer.reset();
-
-        double leftPower = launcherPID(
-                targetVelocityLeft,
-                launcherLeft.getVelocity(),
-                dt,
-                true
-        );
-
-        double rightPower = launcherPID(
-                targetVelocityRight,
-                launcherRight.getVelocity(),
-                dt,
-                false
-        );
-
-        launcherLeft.setPower(Range.clip(leftPower, -1, 1));
-        launcherRight.setPower(Range.clip(rightPower, -1, 1));
-    }
-
-    private double launcherPID(double target, double current, double dt, boolean isLeft) {
-
-        double error = target - current;
-
-        if (isLeft) {
-            leftIntegral += error * dt;
-            double derivative = (error - leftLastError) / dt;
-            leftLastError = error;
-            return (kP * error) + (kI * leftIntegral) + (kD * derivative);
-        } else {
-            rightIntegral += error * dt;
-            double derivative = (error - rightLastError) / dt;
-            rightLastError = error;
-            return (kP * error) + (kI * rightIntegral) + (kD * derivative);
-        }
-    }
+    private void alignToPost() {}
+    private void exitAlign() {}
 }
