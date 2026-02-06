@@ -115,6 +115,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     static final double MAX_TURN_SPEED = 0.2;
     static boolean findMOTIFStrafing = true;
+    static boolean findBall = true;
     static double TOTAL_STAF = 0.0;
     static boolean findPostOneTime = true;
     static final double TIMEOUT_SECONDS = 5.0;
@@ -228,7 +229,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     telemetry.addLine("Launching");
                     telemetry.update();
                     launch(MotifID);
-                    CurrentState = KurryState.ePark;
+                    CurrentState = KurryState.eFind_More_Artifacts;
                     break;
                 case ePICKUP:
                     Sort(1);
@@ -249,12 +250,25 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     CurrentState = KurryState.eDone;
                     break;
                 case eFind_More_Artifacts:
-                    turnRelative(0.3,SIGN_Alliance * 45,1000);
-                    if(alliance == Alliance.eRed) {
-                        strafing(20, false);
-                    }
-                    else {
-                        strafing(20, true);
+                    if(findBall) {
+
+                        if(alliance == Alliance.eBlue) {
+                            turnRelative(0.3,45,1000);
+                            strafing(36, true);
+                            Sort(1);
+                            driveStraight(20,false);
+                            strafing(36, false);
+                            turnRelative(0.3,-45,1000);
+                            CurrentState = KurryState.eLaunch;
+
+
+                        }
+                        else {
+                            turnRelative(0.3,-45,1000);
+                            strafing(36, false);
+                        }
+                        TOTAL_STAF = 0.0;
+                        findBall = false;
                     }
 
                     break;
@@ -331,7 +345,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         turnRelative(0.3,45*SIGN_Alliance,2000);
     }
     private void Sort(double order){
-        intake.setPower(0.767);
+        intake.setPower(1);
         if(order == 1){
             driveStraight(10,true);
             divider.setPower(1);
@@ -339,6 +353,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
             divider.setPower(-1);
             driveStraight(6,true);
             divider.setPower(0);
+            intake.setPower(0);
         }
     }
 private void AlignPost() {
@@ -442,7 +457,7 @@ private void AlignPost() {
     private void InitializeMotorServosEverything() {
         // ===== Initialize Motors & Servos =====
 
-
+        findBall = true;
         findMOTIFStrafing = true;
         findPostOneTime = true;
         targetHeadingInit = false;
