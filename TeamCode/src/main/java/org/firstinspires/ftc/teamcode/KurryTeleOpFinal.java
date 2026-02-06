@@ -145,6 +145,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
         launcherLeft.setPower(pL);
         launcherRight.setPower(pR);
 
+
         if (gamepad1.right_trigger > 0.2) {
             intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             intake.setPower(0.8);
@@ -159,7 +160,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
             }
         }
 
-        flapperLeft.setPosition(gamepad2.b ? 0.55 : 0.25);
+        flapperLeft.setPosition(gamepad2.b ? 0.65 : 0.05);
         flapperRight.setPosition(gamepad2.dpad_left ? 0.65 : 0.82);
 
         if (gamepad2.left_stick_button) servoWheel.setPower(1.0);
@@ -187,7 +188,7 @@ public class KurryTeleOpFinal extends LinearOpMode {
         }
 
         if (lockedTag == null || lostTagTimer.seconds() > 0.4) {
-            moveRobot(0, 0, 0.2 * allianceSign);
+//            moveRobot(0, 0, 0.2 * allianceSign);
             return;
         }
 
@@ -196,23 +197,22 @@ public class KurryTeleOpFinal extends LinearOpMode {
             return;
         }
 
-        double rangeError = lockedTag.ftcPose.range ;
+
         double bearingError = lockedTag.ftcPose.bearing;
         double yawError = lockedTag.ftcPose.yaw;
 
-        if (Math.abs(rangeError) < RANGE_TOL &&
-                Math.abs(bearingError) < BEARING_TOL &&
+        if (    Math.abs(bearingError) < BEARING_TOL &&
                 Math.abs(yawError) < YAW_TOL) {
             gamepad1.rumble(250);
             exitAlign();
             return;
         }
 
-        double drive  = Range.clip(rangeError * SPEED_GAIN, -MAX_DRIVE, MAX_DRIVE);
+
         double strafe = Range.clip(-bearingError * STRAFE_GAIN, -MAX_STRAFE, MAX_STRAFE);
         double turn   = Range.clip(-yawError * TURN_GAIN, -MAX_TURN, MAX_TURN);
 
-        moveRobot(drive, strafe, turn);
+        moveRobot(0, strafe, turn);
     }
 
     private AprilTagDetection getClosestTag(List<AprilTagDetection> detections) {
@@ -289,11 +289,22 @@ public class KurryTeleOpFinal extends LinearOpMode {
         double dt = pidTimer.seconds();
         pidTimer.reset();
 
-        launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
-        launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+        double leftPower = launcherPID(
+                targetVelocityLeft,
+                launcherLeft.getVelocity(),
+                dt,
+                true
+        );
 
-        launcherLeft.setVelocity(targetVelocityLeft);
-        launcherRight.setVelocity(targetVelocityRight);
+        double rightPower = launcherPID(
+                targetVelocityRight,
+                launcherRight.getVelocity(),
+                dt,
+                false
+        );
+
+        launcherLeft.setPower(Range.clip(leftPower, -1, 1));
+        launcherRight.setPower(Range.clip(rightPower, -1, 1));
     }
 
     private double launcherPID(double target, double current, double dt, boolean isLeft) {
