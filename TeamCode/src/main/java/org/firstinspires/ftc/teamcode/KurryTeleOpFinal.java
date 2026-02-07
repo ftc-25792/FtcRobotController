@@ -299,8 +299,8 @@ public class KurryTeleOpFinal extends LinearOpMode {
         if (gamepad2.left_trigger > 0.2)  targetVelocityLeft  = 1900;
         if (gamepad2.right_trigger > 0.2) targetVelocityRight = 2000;
 
-        if (gamepad2.left_bumper)  targetVelocityLeft  = 1400;
-        if (gamepad2.right_bumper) targetVelocityRight = 1400;
+        if (gamepad2.left_bumper)  targetVelocityLeft  = 2000;
+        if (gamepad2.right_bumper) targetVelocityRight = 1600;
 
         if (gamepad2.dpad_up) targetVelocityLeft  = 4500;
         if (gamepad2.y)       targetVelocityRight = 4500;
