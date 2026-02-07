@@ -21,16 +21,11 @@ import java.util.List;
 public class KurryAutoLongStateMachine extends LinearOpMode {
 
 
-    public static final double Red_In = 0.28*6000;
-    public static final double Red_Out = 0.28*6000;
-    public static final double Blue_IN = 0.28*6000;
-    public static final double Blue_Out = 0.28*6000;
+    public static final double Red_In = 0.35*6000;
+    public static final double Red_Out = 0.35*6000;
+    public static final double Blue_IN = 0.27*6000;
+    public static final double Blue_Out = 0.27*6000;
     public static final double POST_DISTANCE = 1.5;
-    public static final double P = 0.00008;
-    public static final double I = 0.0000008;
-    public static final double D = 0.0005;
-    public static final double F = 14;
-
     double diff = 2;
     enum KurryState{
         eFind_MOTIF,
@@ -180,7 +175,7 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
                     {
                         MotifID = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
                         MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF; //eFind_POST
+                        CurrentState = KurryState.eLaunch;//.eConfirm_MOTIF; //eFind_POST
                         findMotif = true;
                         break;
                     }
@@ -321,7 +316,7 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
         }else{
             strafing(5,true);
         }
-
+        driveStraight(4,true);
         setMotorsNOTUsingEncoders();
 
         double angle = SIGN_Alliance * 22;
@@ -522,7 +517,7 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
                 divide(false);
                 rightLaunch();
                 divide(true);
-                leftLaunch();
+                BothLaunch();
 
                 break;
             case 22:
@@ -531,14 +526,14 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
 
                 leftLaunch();
                 divide(false);
-                rightLaunch();
+                BothLaunch();
                 break;
             case 21:
             default:
                 leftLaunch();
                 rightLaunch();
                 divide(false);
-                rightLaunch();
+                BothLaunch();
                 break;
 
         }
@@ -559,14 +554,16 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
     }
     private void PrepForLaunch() {
         setMotorsUsingEncoders();
-        launcherLeft.setVelocityPIDFCoefficients(P, I, D,F);
-        launcherRight.setVelocityPIDFCoefficients(P, I, D,F);
         if (KurryAutoLongStateMachine.Alliance.eBlue == alliance) {
-                launcherRight.setVelocity(Blue_IN);
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherRight.setVelocity(Blue_IN);
             launcherLeft.setVelocity(Blue_Out);
             telemetry.addData("Launch Left Vel", Blue_Out);
             telemetry.addData("Launch Right Vel", Blue_IN);
         } else {
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
+            launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherRight.setVelocity(Red_Out);
             launcherLeft.setVelocity(Red_In);
             telemetry.addData("Launch Left Vel", Red_In);
@@ -589,14 +586,6 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
     }
 
     private void rightLaunch() {
-        if(alliance == Alliance.eRed){
-            turnRelative(0.3,7,1000);
-            flapperRight.setPosition(0.65);
-            sleep(750);
-            flapperRight.setPosition(0.81);
-            sleep(250);
-            turnRelative(0.3,-7,1000);
-        }
         sleep(1000);
         flapperRight.setPosition(0.65);
         sleep(750);
@@ -605,14 +594,6 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
     }
 
     private void leftLaunch() {
-        if (alliance == Alliance.eBlue){
-            turnRelative(0.3,-7,1000);
-            flapperLeft.setPosition(0.35);
-            sleep(750);
-            flapperLeft.setPosition(0.55);
-            sleep(250);
-            turnRelative(0.3,7,1000);
-        }
         sleep(1000);
         flapperLeft.setPosition(0.35);
         sleep(750);
