@@ -23,8 +23,8 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
 
     public static final double Red_In = 0.28*6000;
     public static final double Red_Out = 0.28*6000;
-    public static final double Blue_IN = 0.28*6000;
-    public static final double Blue_Out = 0.28*6000;
+    public static final double Blue_IN = 0.25*6000;
+    public static final double Blue_Out = 0.25*6000;
     public static final double POST_DISTANCE = 1.5;
     public static final double P = 0.00008;
     public static final double I = 0.0000008;
