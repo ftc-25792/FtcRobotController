@@ -23,8 +23,8 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
 
     public static final double Red_In = 6000*0.20;
     public static final double Red_Out = 6000*0.20;
-    public static final double Blue_IN = 6000*0.18;
-    public static final double Blue_Out = 6000*0.15;
+    public static final double Blue_IN = 6000*0.20;
+    public static final double Blue_Out = 6000*0.17;
     public static final double POST_DISTANCE = 1.5;
     double diff = 2;
     enum KurryState{
@@ -222,7 +222,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
                     if (!PrepDone){
                         PrepForLaunch();
                     }
-                    while(prepTimer.milliseconds() <= 4000) {
+                    while(prepTimer.milliseconds() <= 3000) {
                     telemetry.addLine("Waiting");
                     telemetry.update();
                     }
@@ -551,8 +551,7 @@ private void AlignPost() {
 
         divider.setPower(0);
         intake.setPower(0);
-        launcherLeft.setPower(0);
-        launcherRight.setPower(0);
+
     }
 
     private void BothLaunch(){
