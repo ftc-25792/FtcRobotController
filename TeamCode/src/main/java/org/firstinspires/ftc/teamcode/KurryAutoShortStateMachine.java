@@ -45,7 +45,7 @@ public class KurryAutoShortStateMachine extends LinearOpMode {
         eRed
     };
 
-    Alliance alliance = Alliance.eRed;
+    static Alliance alliance = Alliance.eRed;
     static double Find_Post_Dist_Moved;
     static double SIGN_Alliance= -1;
     static final double POST_RANGE_INCHES = 36;

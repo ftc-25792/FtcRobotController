@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -16,33 +17,57 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
-@Autonomous(name = "--Kurry AutoLong Clean", group = "Linear Opmode")
-public class KurryAutoLongStateMachineClean extends LinearOpMode {
+@Autonomous(name = "--Kurry AutoShort StateMachine Cleanup", group = "Linear Opmode")
+public class KurryAutoShortStateMachineCleanUp extends LinearOpMode {
 
+    private static boolean isLaucherOn = false;
 
-    public static final double Red_In = 2250;
-    public static final double Red_Out = 2250;
-    public static final double Blue_IN = 2250;
-    public static final double Blue_Out = 2250;
+//    public static final double Red_In = 6000*0.20;
+//    public static final double Red_Out = 6000*0.20;
+//    public static final double Blue_IN = 6000*0.18;
+//    public static final double Blue_Out = 6000*0.17;
 
+    public static final double Red_In = 1800;
+    public static final double Red_Out = 1800;
+    public static final double Blue_IN = 1800;
+    public static final double Blue_Out = 1800;
+
+    public static final double POST_DISTANCE = 1.5;
+    double diff = 2;
     enum KurryState{
         eFind_MOTIF,
+        eConfirm_MOTIF,
+        eFind_POST,
+        eAlign_POST,
         eLaunch,
+        eFind_More_Artifacts,
+        ePICKUP,
         ePark,
-        eDone
+        GetBackToSho,
+        eDone;
 
-    }
+    };
     enum Alliance {
         eBlue,
         eRed
-    }
+    };
 
     static Alliance alliance = Alliance.eRed;
-
+    static double Find_Post_Dist_Moved;
     static double SIGN_Alliance= -1;
+    static final double POST_RANGE_INCHES = 36;
+    static final double POST_RANGE_TOL = 1;
+    static final double POST_BEARING_TOL = 3;
+    static final double POST_YAW_TOL = 10;
+    final double SPEED_GAIN = 0.03;
+    final double STRAFE_GAIN = 0.02;
+    final double TURN_GAIN = 0.01;
+    static final double MAX_AUTO_SPEED = 0.5;
+    static final double MAX_AUTO_STRAFE = 0.5;
+    static final double MAX_AUTO_TURN = 0.3;
     private KurryState CurrentState = KurryState.eFind_MOTIF;
     private int MotifID = 21;
-    private boolean findMotif = false;
+    private boolean findMotif = false, findPost = false;
     private static boolean PrepDone = false;
     private ElapsedTime prepTimer = new ElapsedTime();
     private org.firstinspires.ftc.vision.apriltag.AprilTagDetection MotifTag = null,PostTag = null;
@@ -50,10 +75,13 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     private final int RedPost = 24, BluePost = 20;
 
     private ElapsedTime stateTimer = new ElapsedTime();
-
+    private boolean targetHeadingInit = false;
     private double targetHeading = 0;
 
+    private double fallbackLaunchHeading = 0.0;
 
+    static final double Align_POST_Timeout = 2000;// milliseconds before we give up
+    static final double fing_Post_Timeout = 1250;
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
     private DcMotorEx launcherLeft, launcherRight;
     private IMU imu;
@@ -62,16 +90,17 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private AprilTagHelper aprilTagHelper;
-
+    private String pattern = "UNKNOWN";
 
     private static final double DRIVE_SPEED = 0.5;
+    private static final double TURN_SPEED = 0.5;
     private static final double HEADING_THRESHOLD = 3.0; // init was 1 checking 3 now
     private static final double TICKS_PER_INCH = 537.7 / (Math.PI * 4); // 4" wheels, 537.7 ticks/rev
 
     private double LATEST_Range, LATEST_Bearing ;
 
     private static final double MOTIF_STRAF = 20;
-    private static final double MOTIF_DRIVE = 0.5;
+    private static final double MOTIF_DRIVE = 1.5;
 
     // Telemetry variables
 
@@ -81,7 +110,6 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     private double rightSpeed = 0;
     private double headingError = 0;
 
-    private static boolean isLaucherOn = false;
     static final double     COUNTS_PER_MOTOR_REV    = 537.7 ;   // eg: GoBILDA 312 RPM Yellow Jacket
     static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // No External Gearing.
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
@@ -94,10 +122,10 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
     static final double MAX_TURN_SPEED = 0.2;
     static boolean findMOTIFStrafing = true;
+    static boolean findBall = true;
     static double TOTAL_STAF = 0.0;
     static boolean findPostOneTime = true;
     static final double TIMEOUT_SECONDS = 5.0;
-
 
     static final double kP = 0.0003;
     static final double kI = 0;
@@ -105,20 +133,13 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     static final double kF= 0.04 ; //0.39
 
 
-    /*    private double kP = 0.0008;
-    private double kI = 0.0000008;
-    private double kD = 0.00015;
-    */
-
-   static private double leftIntegral = 0, rightIntegral = 0;
+    static private double leftIntegral = 0, rightIntegral = 0;
     static private double leftLastError = 0, rightLastError = 0;
-
 
     static private double targetVelocityLeft = 0;
     static private double targetVelocityRight = 0;
 
     static private ElapsedTime pidTimer = new ElapsedTime();
-
 
     @Override
     public void runOpMode() {
@@ -161,25 +182,23 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
         while(opModeIsActive())
         {
             TelemetryRobotState();
-            TelemetryPID();
-            telemetry.update();
-            if(isLaucherOn)
-            {
-                updateLaunchers();
-                sleep(500);
-            }
-            else {
-                launcherLeft.setPower(0);
-                launcherRight.setPower(0);
-            }
+
+
             switch(CurrentState){
                 case eFind_MOTIF:
                 {
 
                     if(findMOTIFStrafing) {
                         //driveStraight(1,false);
-                        isLaucherOn = true;
+
                         PrepForLaunch();
+                        isLaucherOn = true;
+                        if(alliance == Alliance.eRed) {
+                            strafing(MOTIF_STRAF, true);
+                        }
+                        else {
+                            strafing(MOTIF_STRAF, false);
+                        }
                         TOTAL_STAF = 0.0;
                         findMOTIFStrafing = false;
                     }
@@ -193,23 +212,46 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
                     {
                         MotifID = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id;
                         MotifTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
-                        CurrentState = KurryState.eLaunch;//.eConfirm_MOTIF; //eFind_POST
+                        CurrentState = KurryState.eFind_POST;//.eConfirm_MOTIF; //eFind_POST
                         findMotif = true;
                         break;
                     }
-                    if(stateTimer.milliseconds()>=2000){
-                        CurrentState = KurryState.eLaunch;
-                    }
+                    driveStraight(MOTIF_DRIVE,false);
+                    TOTAL_STAF += MOTIF_DRIVE;
                 }
+                    if(stateTimer.milliseconds() > 3000){
+                        CurrentState = KurryState.eFind_POST;
+                    }
 
                 break;
+                case eConfirm_MOTIF: {
+                    List detections;
+                    aprilTagHelper.telemetryAprilTag(telemetry);
+                    telemetry.update();
+                    detections = aprilTagHelper.getDetections();
+                    if (!detections.isEmpty()) {
+                        if (((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id == MotifID) {
+                            aprilTagHelper.telemetryAprilTag(telemetry);
+                            telemetry.update();
+                            CurrentState = KurryState.eFind_POST;
+                            findMotif = true;
+                        }
+                    } else {
+                        CurrentState = KurryState.eFind_MOTIF;
+                    }
+                }
+                    break;
+
+                case eFind_POST:
+                    FindPost();
+                    break;
+                case eAlign_POST:
+                    AlignPost();
+                    break;
                 case eLaunch:
-                    GoToPost();
                     if (!PrepDone){
                         PrepForLaunch();
-                        isLaucherOn = true;
                     }
-
                     while(prepTimer.milliseconds() <= 3000) {
                         updateLaunchers();
                         telemetry.addLine("Prep Launchers");
@@ -220,24 +262,72 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
                         TelemetryPID();
                         telemetry.update();
                         sleep(500);
-                    }
 
+                        telemetry.addLine("Waiting");
+                    telemetry.update();
+                    }
                     telemetry.addLine("Launching");
-                    telemetry.addData(" Current Velocity R",launcherRight.getVelocity());
-                    telemetry.addData(" Current Velocity  l",launcherLeft.getVelocity());
-                    telemetry.addData("Target Left Vel", targetVelocityLeft);
-                    telemetry.addData("Target Right Vel", targetVelocityRight);
-                    telemetry.addData("Pattern", MotifID);
-                    TelemetryPID();
                     telemetry.update();
                     launch(MotifID);
-                    CurrentState = KurryState.ePark;
+                    CurrentState = KurryState.eFind_More_Artifacts;
+                    break;
+                case ePICKUP:
+                    Sort(1);
+                    CurrentState = KurryState.GetBackToSho;
+                    break;
+                case GetBackToSho:
+                    BackToShoot();
+                    CurrentState = KurryState.eLaunch;
+
                     break;
                 case ePark:
+                    if(alliance == Alliance.eRed) {
+                        strafing(20, false);
+                    }
+                    else {
+                        strafing(20, true);
+                    }
                     isLaucherOn = false;
-                    driveStraight(10, true);
                     CurrentState = KurryState.eDone;
                     break;
+                case eFind_More_Artifacts:
+                    if(findBall) {
+
+                        if(alliance == Alliance.eBlue) {
+                            turnRelative(0.3,38,1000);
+                            strafing(28, true);
+                            Sort(1);
+                            driveStraight(21,false);
+                            strafing(21, false);
+                            turnRelative(0.3,-45,1000);
+                            CurrentState = KurryState.eLaunch;
+
+
+                        }
+                        else {
+                            turnRelative(0.3,-38,1000);
+                            strafing(28, false);
+                            Sort(1);
+                            driveStraight(21,false);
+                            strafing(24, true);
+                            turnRelative(0.3,45,1000);
+                            CurrentState = KurryState.eLaunch;
+                        }
+                        TOTAL_STAF = 0.0;
+                        findBall = false;
+                    }
+
+                    break;
+            }
+
+            if(isLaucherOn)
+            {
+                updateLaunchers();
+                sleep(500);
+            }
+            else {
+                launcherLeft.setPower(0);
+                launcherRight.setPower(0);
             }
         }
         // Stop camera
@@ -255,61 +345,11 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
         telemetry.addData("Right Target", "%.0f", targetVelocityRight);
         telemetry.addData("Right Velocity", "%.0f", launcherRight.getVelocity());
-            telemetry.addData("Right Integral", "%.2f", rightIntegral);
+        telemetry.addData("Right Integral", "%.2f", rightIntegral);
 
 
     }
 
-    private void GoToPost() {
-        if (findPostOneTime )
-        {
-            double angle = TurnToPost();
-            telemetry.addData("Angle rotated is ",+ angle);
-            telemetry.addData("Alliacnce", alliance);
-            telemetry.update();
-            PrepForLaunch();
-            PrepDone = true;
-
-            findPostOneTime = false;
-            stateTimer.reset();
-        }
-        telemetry.update();
-    }
-
-    private double TurnToPost() {
-        driveStraight(4,true);
-        if(alliance == Alliance.eRed) {
-            strafing(5, false);
-        }else{
-            strafing(5,true);
-        }
-        driveStraight(4,true);
-        setMotorsNOTUsingEncoders();
-
-        double angle = SIGN_Alliance * 22;
-        turnRelative(0.3, angle, 1500); //SIGN_Alliance *
-        telemetryIMU();
-        return angle;
-    }
-
-
-
-
-    private void TelemetryRobotState() {
-        telemetry.addData("current state is ",CurrentState);
-
-        if(findMotif)
-            telemetry.addLine("Seen Motif Yes") ;
-        else
-            telemetry.addLine("Seen Motif NO");
-
-
-        telemetry.addData("Pattern ", MotifID);
-
-        telemetry.addData("Latest Range " , +LATEST_Range);
-        telemetry.addData("LATEST bearing", +LATEST_Bearing);
-
-    }
     private double launcherPID(double target, double current, double dt, boolean isLeft) {
         if (dt <= 0) dt = 0.001; // Prevent division by zero
 
@@ -368,14 +408,193 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
         launcherLeft.setPower(Range.clip(leftPower, -1, 1));
         launcherRight.setPower(Range.clip(rightPower, -1, 1));
     }
+    private void FindPost() {
+        if (findPostOneTime )
+        {
+            double angle = TurnToPost();
+            telemetry.addData("Angle rotated is ",+ angle);
+            telemetry.update();
+            PrepForLaunch();
+            isLaucherOn = true;
+            PrepDone = true;
+
+            findPostOneTime = false;
+            stateTimer.reset();
+        }
+
+
+        List detections = aprilTagHelper.getDetections();
+        aprilTagHelper.telemetryAprilTag(telemetry);
+        telemetry.update();
+        int post = RedPost;
+        if(Alliance.eBlue == alliance)
+        {
+            post = BluePost;
+        }
+        if(!detections.isEmpty()  && ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0)).id  == post){
+            org.firstinspires.ftc.vision.apriltag.AprilTagDetection tag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+
+            PostTag = ((org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0));
+            CurrentState = KurryState.eAlign_POST;
+            findPostOneTime = true;
+            findPost = true;
+
+            TelemetryRobotState();
+            telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
+            telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
+            telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
+            telemetry.update();
+            return;
+        }
+        driveStraight(POST_DISTANCE,false);
+        Find_Post_Dist_Moved =+ POST_DISTANCE;
+    if(stateTimer.milliseconds() >= fing_Post_Timeout)
+        {
+            driveStraight(Find_Post_Dist_Moved,true);
+            CurrentState = KurryState.eLaunch;
+            findPost = false;
+            findPostOneTime = true;
+            return;
+        }
+    }
+
+    private double TurnToPost() {
+        setMotorsNOTUsingEncoders();
+        double angle = SIGN_Alliance * 90;
+        turnRelative(0.3, angle, 1500); //SIGN_Alliance *
+        telemetryIMU();
+        return angle;
+    }
+
+    private void BackToShoot(){
+        driveStraight(21,false);
+        if (alliance == Alliance.eRed){
+            strafing(20,true);
+        }else {
+            strafing(20,false);
+        }
+        turnRelative(0.3,45*SIGN_Alliance,2000);
+    }
+    private void Sort(double order){
+        intake.setPower(1);
+        if(order == 1){
+            driveStraight(15,true);
+            divider.setPower(1);
+            driveStraight(3,true);
+            divider.setPower(-1);
+            driveStraight(3,true);
+            divider.setPower(0);
+            intake.setPower(0);
+        }
+    }
+private void AlignPost() {
+    double drive = 1, turn = 1 , strafe  = 1;
+    if(!targetHeadingInit) {
+        // Reset timer so we can timeout if tag doesnt align in time
+        stateTimer.reset();
+        setMotorsNOTUsingEncoders();
+        targetHeadingInit = true;
+    }
+    List detections = aprilTagHelper.getDetections();
+    if(!detections.isEmpty()) {
+        PostTag = (org.firstinspires.ftc.vision.apriltag.AprilTagDetection) detections.get(0);
+        if(alliance == Alliance.eBlue){
+             diff = 20;
+        } else{
+            diff = -12;
+        }
+        if (PostTag != null) {
+            double rangeError = (PostTag.ftcPose.range - 70);
+            double headingError = PostTag.ftcPose.bearing;
+            double yawError = PostTag.ftcPose.yaw - diff;
+            // Use the speed and turn "gains" to calculate how we want the robot to move.
+            drive = Range.clip(rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+            turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+            strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+
+            telemetry.addData("Range",  "%5.1f inches", PostTag.ftcPose.range);
+            telemetry.addData("Bearing","%3.0f degrees", PostTag.ftcPose.bearing);
+            telemetry.addData("Yaw","%3.0f degrees", PostTag.ftcPose.yaw);
+            telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+            telemetry.addData("Range","Error %5.2f, Tolerance %5.2f",rangeError,POST_RANGE_TOL);
+            telemetry.addData("Yaw","Error %5.2f, Tolerance %5.2f",yawError, POST_YAW_TOL);
+            telemetry.addData("Bearing","Heading error %5.2f, Bearing tol %5.2f", headingError,POST_BEARING_TOL);
+            telemetry.update();
+
+            moveRobotForTurn(drive,strafe,turn);
+
+            moveRobot(0,0);
+
+            if(Math.abs(rangeError)<POST_RANGE_TOL && Math.abs(headingError) < POST_BEARING_TOL && Math.abs(yawError)<POST_YAW_TOL){
+                telemetry.addLine("POST aligned");
+                telemetry.update();
+                moveRobot(0,0);
+                targetHeadingInit = false;
+                Post_AlignTelemetry();
+                CurrentState = KurryState.eLaunch;
+                return;
+
+            }
+        }
+        else {
+            // fallback heading if no  Tag
+            telemetry.addLine("fallback ");
+            telemetry.update();
+            targetHeading = fallbackLaunchHeading;
+        }
+    }
+    if (stateTimer.milliseconds()>750){
+        CurrentState = KurryState.eLaunch;
+    }
+    else {
+        telemetry.addLine("Detection is empty");
+        telemetry.update();
+        Post_AlignTelemetry();
+        CurrentState = KurryState.eLaunch;
+    }
+
+
+}
+
+    private void Post_AlignTelemetry() {
+        if(PostTag != null) {
+            LATEST_Bearing = PostTag.ftcPose.bearing;
+            LATEST_Range = PostTag.ftcPose.range;
+        }
+        TelemetryRobotState();
+    }
+
+    private void TelemetryRobotState() {
+        telemetry.addData("current state is ",CurrentState);
+
+        if(findMotif)
+            telemetry.addLine("Seen Motif Yes") ;
+        else
+            telemetry.addLine("Seen Motif NO");
+        if(findPost)
+            telemetry.addLine("Seen Post Yes");
+        else
+            telemetry.addLine("Seen Post NO");
+
+
+
+        telemetry.addData("Pattern ", MotifID);
+
+        telemetry.addData("Latest Range " , +LATEST_Range);
+        telemetry.addData("LATEST bearing", +LATEST_Bearing);
+        telemetry.update();
+    }
+
     private void InitializeMotorServosEverything() {
         // ===== Initialize Motors & Servos =====
 
-
+        findBall = true;
         findMOTIFStrafing = true;
         findPostOneTime = true;
+        targetHeadingInit = false;
         PrepDone = false;
         TOTAL_STAF = 0.0;
+        Find_Post_Dist_Moved = 0.0;
 
         SIGN_Alliance = -1;
         alliance = Alliance.eRed;
@@ -389,6 +608,9 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
         launcherRight = hardwareMap.get(DcMotorEx.class, "launcherRight");
         launcherLeft.setDirection(DcMotorEx.Direction.REVERSE);
         launcherRight.setDirection(DcMotorEx.Direction.FORWARD);
+
+        launcherLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        launcherRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
         intake = hardwareMap.get(DcMotor.class, "intake");
 
@@ -416,10 +638,6 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
         setMotorsUsingEncoders();
 
-        launcherLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        launcherRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-
-
         aprilTagHelper = new AprilTagHelper(hardwareMap);
         telemetry.addLine("AprilTag Helper initialized...");
         telemetry.update();
@@ -428,13 +646,12 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     private void telemetryIMU() {
         telemetry.addData("imu Head  Pitch, Roll" , "%5.2f %5.2f  %5.2f", getHeading(),getPitch(),getRoll());
         telemetry.update();
-        //sleep(2000);
     }
 
     private void launch(int pattern) {
 
         switch (pattern) {
-            case 23: // PPG
+            case 23:
 
                 rightLaunch();
                 divide(false);
@@ -443,7 +660,7 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
                 BothLaunch();
 
                 break;
-            case 22: // PGP
+            case 22:
 
                 rightLaunch();
 
@@ -451,7 +668,7 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
                 divide(false);
                 BothLaunch();
                 break;
-            case 21: // GPP
+            case 21:
             default:
                 leftLaunch();
                 rightLaunch();
@@ -463,11 +680,17 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
         divider.setPower(0);
         intake.setPower(0);
-        launcherLeft.setVelocity(0);
-        launcherRight.setVelocity(0);
+
     }
 
-
+    private void BothLaunch(){
+        flapperRight.setPosition(0.65);
+        flapperLeft.setPosition(0.35);
+        sleep(750);
+        flapperRight.setPosition(0.81);
+        flapperLeft.setPosition(0.55);
+        sleep(250);
+    }
     private void PrepForLaunch() {
         setMotorsUsingEncoders();
         divider.setPower(0);
@@ -487,7 +710,6 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     }
 
     private void rightLaunch() {
-        sleep(1000);
         flapperRight.setPosition(0.65);
         sleep(750);
         flapperRight.setPosition(0.81);
@@ -495,17 +717,8 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
     }
 
     private void leftLaunch() {
-        sleep(1000);
         flapperLeft.setPosition(0.35);
         sleep(750);
-        flapperLeft.setPosition(0.55);
-        sleep(250);
-    }
-    private void BothLaunch(){
-        flapperRight.setPosition(0.65);
-        flapperLeft.setPosition(0.35);
-        sleep(750);
-        flapperRight.setPosition(0.81);
         flapperLeft.setPosition(0.55);
         sleep(250);
     }
@@ -564,7 +777,7 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
             telemetry.update();
         }
         stopAll();
-        sleep(50);
+
     }
 
     private void strafing(double inches, boolean left) {
@@ -599,11 +812,11 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
             telemetry.update();
         }
         stopAll();
-        sleep(100);
+
     }
 
     public void turnRelative(double maxTurnSpeed, double deltaAngle, double timeoutInMS) {
-        //  double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
+      //  double targetHeading = AngleUnit.normalizeDegrees(getHeading() + deltaAngle);
         //turnToHeading(maxTurnSpeed, targetHeading, timeoutInMS);
         setMotorsNOTUsingEncoders();
 
@@ -660,14 +873,14 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
             {
                 telemetry.addLine("Heading error small exit");
                 telemetry.update();
-                //   sleep(500);
+             //   sleep(500);
                 break;
             }
             if(runtime.milliseconds() > timeoutInMS)
             {
                 telemetry.addLine("turn timeout");
                 telemetry.update();
-                // sleep(500);
+               // sleep(500);
                 break;
             }
             // Determine required steering to keep on heading
@@ -861,4 +1074,6 @@ public class KurryAutoLongStateMachineClean extends LinearOpMode {
         return orientation.getRoll(AngleUnit.DEGREES);
 
     }
+
 }
+
