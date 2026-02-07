@@ -18,7 +18,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import java.util.List;
 
 @Autonomous(name = "--Kurry AutoLong StateMachine", group = "Linear Opmode")
-public class KurryAutoLongStateMachine extends LinearOpMode {
+public class KurryAutoLongStateMachineClean extends LinearOpMode {
 
 
     public static final double Red_In = 0.35*6000;
@@ -554,7 +554,7 @@ public class KurryAutoLongStateMachine extends LinearOpMode {
     }
     private void PrepForLaunch() {
         setMotorsUsingEncoders();
-        if (KurryAutoLongStateMachine.Alliance.eBlue == alliance) {
+        if (Alliance.eBlue == alliance) {
             launcherLeft.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherRight.setVelocityPIDFCoefficients(0.00008,0.00000008,.0005,14);
             launcherRight.setVelocity(Blue_IN);
