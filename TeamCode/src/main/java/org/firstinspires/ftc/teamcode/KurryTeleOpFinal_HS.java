@@ -15,8 +15,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
-@TeleOp(name = "--KURRYTeleOpV Qualifiers M&K", group = "Linear Opmode")
-public class KurryTeleOpFinal extends LinearOpMode {
+@TeleOp(name = "--KURRYTeleOpV Qualifiers_HS", group = "Linear Opmode")
+public class KurryTeleOpFinal_HS extends LinearOpMode {
 
     private DcMotor frontLeft, frontRight, backLeft, backRight, intake;
     private DcMotorEx launcherLeft, launcherRight;
@@ -91,13 +91,13 @@ public class KurryTeleOpFinal extends LinearOpMode {
 
         launcherLeft.setDirection(DcMotor.Direction.REVERSE);
 
-        launcherLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        launcherRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        launcherLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        launcherRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -152,10 +152,16 @@ public class KurryTeleOpFinal extends LinearOpMode {
     }
     private void driveControls() {
 
-        double y  = -gamepad1.left_stick_y;
-        double x  =  gamepad1.left_stick_x;
-        double rx =  gamepad1.right_stick_x;
-        moveRobot(y * SPEED_FACTOR, x * SPEED_FACTOR, rx * SPEED_FACTOR);
+        // Drive control (basic tank/mecanum hybrid)
+        double leftStickX = gamepad1.left_stick_x * SPEED_FACTOR;
+        double leftStickY = -gamepad1.left_stick_y * SPEED_FACTOR;
+        double rightStickX = gamepad1.right_stick_x * SPEED_FACTOR;
+
+        double frontLeftPower = leftStickY + leftStickX;
+        double frontRightPower = leftStickY - leftStickX;
+        double backLeftPower = leftStickY + rightStickX;
+        double backRightPower = leftStickY - rightStickX;
+        //moveRobot(y * SPEED_FACTOR, x * SPEED_FACTOR, rx * SPEED_FACTOR);
 
         double pL = 0, pR = 0;
         if (gamepad2.left_trigger > 0.2) pL = 0.43;
